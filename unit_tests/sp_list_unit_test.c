@@ -11,7 +11,8 @@ static SPList quickList(int size, ...) {
 	va_list items;
 	SPList list = spListCreate();
 	va_start(items, size);
-	for (int i = 0; i < size; i++) {
+	int i;
+	for (i = 0; i < size; i++) {
 		spListInsertLast(list, va_arg(items, SPListElement));
 	}
 	va_end(items);

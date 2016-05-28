@@ -11,7 +11,8 @@ bool pointBasicCopyTest() {
 	SPPoint q = spPointCopy(p);
 	ASSERT_TRUE(spPointGetIndex(p) == spPointGetIndex(q));
 	ASSERT_TRUE(spPointGetDimension(p) == spPointGetDimension(q));
-	for (int i = 0; i < spPointGetDimension(p); i++) {
+	int i;
+	for (i = 0; i < spPointGetDimension(p); i++) {
 		ASSERT_TRUE(spPointGetAxisCoor(p, i) == spPointGetAxisCoor(q, i));
 	}
 	spPointDestroy(p);
