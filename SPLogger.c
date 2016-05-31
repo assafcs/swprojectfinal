@@ -99,6 +99,24 @@ SP_LOGGER_MSG spLoggerPrintInfo(const char* msg){
 	return SP_LOGGER_SUCCESS;
 }
 
+SP_LOGGER_MSG spLoggerPrintMsg(const char* msg){
+	if (logger == NULL){
+		return SP_LOGGER_UNDIFINED;
+	}
+	if (msg == NULL){
+		return SP_LOGGER_INVAlID_ARGUMENT;
+	}
+	int res = fprintf(logger->outputChannel, MSG_ROW_PREFIX, msg, NEW_LINE);
+	if (res < 0){
+		return SP_LOGGER_WRITE_FAIL;
+	}
+	res = fprintf(NEW_LINE);
+	if (res < 0){
+		return SP_LOGGER_WRITE_FAIL;
+	}
+	return SP_LOGGER_SUCCESS;
+}
+
 SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char* file,
 		const char* function, const int line){
 	if (logger == NULL){
