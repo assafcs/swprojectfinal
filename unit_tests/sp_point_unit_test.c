@@ -19,6 +19,7 @@ bool pointBasicCopyTest() {
 	spPointDestroy(q);
 	return true;
 }
+
 bool pointBasicL2Distance() {
 	double data1[2] = { 1.0, 1.0 };
 	double data2[2] = { 1.0, 0.0 };
@@ -36,6 +37,7 @@ bool pointBasicL2Distance() {
 	return true;
 }
 int main() {
+	printf("ASSAF AAAAAAAA---,,,");
 	RUN_TEST(pointBasicCopyTest);
 	RUN_TEST(pointBasicL2Distance);
 	return 0;

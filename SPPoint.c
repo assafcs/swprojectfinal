@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <assert.h>
 
-typedef struct sp_point_t{
+#define ZERO 0
+
+struct sp_point_t {
 	double* pData;
 	int index;
 	int dim;
 };
 
 SPPoint spPointCreate(double* data, int dim, int index) {
-	if (data == NULL || dim == NULL || dim <= 0 || index == NULL || index < 0){
-		return NULL;
-	}
-	SPPoint newPoint;
+	assert(!(data == NULL || dim <= ZERO  || index < ZERO));
+	SPPoint newPoint = {NULL, index, dim};
 	newPoint->pData = (double*) malloc (dim * sizeof(double));
 	if (newPoint->pData == NULL){
 		return NULL;
@@ -21,14 +21,12 @@ SPPoint spPointCreate(double* data, int dim, int index) {
 	for (i = 0; i < dim; i++){
 		newPoint->pData[i] = data[i];
 	}
-	newPoint->index = index;
-	newPoint->dim = dim;
 	return newPoint;
 
 }
 
 SPPoint spPointCopy(SPPoint source) {
-	// assert true that source != source
+	assert(source != NULL);
 	SPPoint copyPoint = spPointCreate(source->pData, source->dim, source->index);
 	return copyPoint;
 }
@@ -40,22 +38,29 @@ void spPointDestroy(SPPoint point) {
 }
 
 int spPointGetDimension(SPPoint point)  {
-	//assert point != NULL
+	assert(point != NULL);
 	return point->dim;
 }
 
 int spPointGetIndex(SPPoint point) {
-	//assert point != NULL
+	assert(point != NULL);
 	return point->index;
 }
 
 double spPointGetAxisCoor(SPPoint point, int axis) {
-	// assert point != NULL and axis < point->dim
+	assert(point != NULL && axis < point->dim);
 	return point->pData[axis];
 }
 
 double spPointL2SquaredDistance(SPPoint p, SPPoint q) {
-
+	assert(p != NULL && q != NULL && p->dim == q->dim);
+	int i;
+	int squared_dist = 0;
+	for (i = 0; i < p->dim; i++){
+		double diff = p->pData[i] - q->pData[i];
+		squared_dist += (diff * diff);
+	}
+	return squared_dist;
 }
 
 
