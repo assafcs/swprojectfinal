@@ -6,6 +6,16 @@
 //File open mode
 #define SP_LOGGER_OPEN_MODE "w"
 
+#define ERROR_HEADER "---ERROR---"
+#define WARNING_HEADER "---WARNING---"
+#define INFO_HEADER "---INFO---"
+#define DEBUG_HEADER "---DEBUG---"
+#define FILE_ROW_PREFIX "- file: "
+#define FUNCTION_ROW_PREFIX "- function: "
+#define LINE_ROW_PREFIX "- line: "
+#define MSG_ROW_PREFIX "- message: "
+#define NEW_LINE "/n"
+
 // Global variable holding the logger
 SPLogger logger = NULL;
 
@@ -48,4 +58,91 @@ void spLoggerDestroy() {
 	}
 	free(logger);//free allocation
 	logger = NULL;
+}
+
+SP_LOGGER_MSG spLoggerPrintError(const char* msg, const char* file, const char* file,
+		const char* function, const int line){
+	return generalLoggerPrint(ERROR_HEADER, msg, file, function, line);
+}
+
+SP_LOGGER_MSG spLoggerPrintWarning(const char* msg, const char* file, const char* file,
+		const char* function, const int line){
+	return generalLoggerPrint(WARNING_HEADER, msg, file, function, line);
+}
+
+SP_LOGGER_MSG spLoggerPrintDebug(const char* msg, const char* file, const char* file,
+		const char* function, const int line){
+	return generalLoggerPrint(DEBUG_HEADER, msg, file, function, line);
+}
+
+SP_LOGGER_MSG spLoggerPrintInfo(const char* msg){
+	if (logger == NULL){
+		return SP_LOGGER_UNDIFINED;
+	}
+	if (msg == NULL){
+		return SP_LOGGER_INVAlID_ARGUMENT;
+	}
+	if (logger->level == SP_LOGGER_DEBUG_INFO_WARNING_ERROR_LEVEL || logger->level == SP_LOGGER_INFO_WARNING_ERROR_LEVEL){
+		int res = fprintf(logger->outputChannel, INFO_HEADER, NEW_LINE);
+		if (res < 0){
+			return SP_LOGGER_WRITE_FAIL;
+		}
+		res = fprintf(logger->outputChannel, MSG_ROW_PREFIX, msg, NEW_LINE);
+		if (res < 0){
+			return SP_LOGGER_WRITE_FAIL;
+		}
+		res = fprintf(NEW_LINE);
+		if (res < 0){
+			return SP_LOGGER_WRITE_FAIL;
+		}
+	}
+	return SP_LOGGER_SUCCESS;
+}
+
+SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char* file,
+		const char* function, const int line){
+	if (logger == NULL){
+		return SP_LOGGER_UNDIFINED;
+	}
+	if (msg == NULL || file == NULL || function == NULL || line < 0){
+		return SP_LOGGER_INVAlID_ARGUMENT;
+	}
+	if ((logger->level == SP_LOGGER_ERROR_LEVEL && header == ERROR_HEADER) || (
+			logger->level == SP_LOGGER_WARNING_ERROR_LEVEL && (header == WARNING_HEADER || header == ERROR_HEADER)) || (
+					logger->level == SP_LOGGER_DEBUG_INFO_WARNING_ERROR_LEVEL)){
+		int res = loggerDetailLines(header, msg, file, function, line);
+		if (res == 0){
+			return SP_LOGGER_WRITE_FAIL;
+		}
+	}
+	return SP_LOGGER_SUCCESS;
+}
+
+
+int loggerDetailLines(const char* header, const char* msg, const char* file, const char* function, const int line){
+	int res = fprintf(logger->outputChannel, header, NEW_LINE);
+	if (res < 0){
+		return 0;
+	}
+	res = fprintf(logger->outputChannel, FILE_ROW_PREFIX, file, NEW_LINE);
+	if (res < 0){
+		return 0;
+	}
+	res = fprintf(logger->outputChannel, FUNCTION_ROW_PREFIX, function, NEW_LINE);
+	if (res < 0){
+		return 0;
+	}
+	res = fprintf(logger->outputChannel, LINE_ROW_PREFIX, line, NEW_LINE);
+	if (res < 0){
+		return 0;
+	}
+	res = fprintf(logger->outputChannel, MSG_ROW_PREFIX, msg, NEW_LINE);
+	if (res < 0){
+		return 0;
+	}
+	res = fprintf(NEW_LINE);
+	if (res < 0){
+		return 0;
+	}
+	return 1;
 }
