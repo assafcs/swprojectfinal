@@ -89,21 +89,6 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 
 	SPList list = source->innerList;
 
-	if (spListGetSize(list) == 0) {
-		// maxSize must be positive, so just insert the item
-		SP_LIST_MSG returnMSG = spListInsertFirst(list, elementCopy);
-		switch (returnMSG) {
-		case SP_LIST_OUT_OF_MEMORY:
-			spListElementDestroy(elementCopy);
-			return SP_BPQUEUE_OUT_OF_MEMORY;
-		case SP_LIST_SUCCESS:
-			return SP_BPQUEUE_SUCCESS;
-		default:
-			// No other possible outcome
-			return SP_BPQUEUE_ERROR;
-		}
-	}
-
 	bool wasInserted = false;
 	// Advance iterator to the proper element's place
 	SP_LIST_FOREACH(SPListElement, currentElement, list) {
@@ -138,7 +123,6 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 		default:
 			return SP_BPQUEUE_SUCCESS;
 		}
-		wasInserted = true;
 	}
 
 	if (wasInserted) {
@@ -160,5 +144,10 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 
 	// The element was not inserted because it is larger than the maximum element and list is full
 	return SP_BPQUEUE_FULL;
+}
+
+SP_BPQUEUE_MSG spBPQueueDequeue(SPBPQueue source) {
+	if (source == NULL) return SP_BPQUEUE_ERROR;
+	else { return SP_BPQUEUE_SUCCESS; }
 }
 
