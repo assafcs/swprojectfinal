@@ -106,6 +106,15 @@ SPListElement spListGetFirst(SPList list) {
 	}
 }
 
+SPListElement spListGetLast(SPList list){
+	if (list == NULL || spListGetSize(list) == 0) {
+		return NULL;
+	} else {
+		list->current = list->tail->previous;
+		return list->current->data;
+	}
+}
+
 SPListElement spListGetNext(SPList list) {
 	if (list == NULL || spListGetSize(list) == 0 || list->current == NULL) {
 		return NULL;
@@ -115,6 +124,20 @@ SPListElement spListGetNext(SPList list) {
 			return NULL;
 		} else {
 			list->current = list->current->next;
+			return list->current->data;
+		}
+	}
+}
+
+SPListElement spListGetPrevious(SPList list) {
+	if (list == NULL || spListGetSize(list) == 0 || list->current == NULL) {
+		return NULL;
+	} else {
+		if (list->current->previous == list->head) {
+			list->current = NULL;
+			return NULL;
+		} else {
+			list->current = list->current->previous;
 			return list->current->data;
 		}
 	}

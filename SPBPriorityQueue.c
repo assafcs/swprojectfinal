@@ -104,7 +104,6 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 		}
 	}
 
-	int index = 0;
 	bool wasInserted = false;
 	// Advance iterator to the proper element's place
 	SP_LIST_FOREACH(SPListElement, currentElement, list) {
@@ -125,14 +124,8 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 			default:
 				break;
 			}
-			++index;
 			wasInserted = true;
 		}
-		if (index == spListGetSize(list) - 1) {
-			// This is the last node, break to keep current pointing to it.
-			break;
-		}
-		++index;
 	}
 
 	if (spListGetSize(list) < source->maxSize && !wasInserted) {
@@ -151,6 +144,7 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 	if (wasInserted) {
 		// Remove the last element if needed
 		if (spListGetSize(list) > source->maxSize) {
+			spListGetLast(list);
 			SP_LIST_MSG returnMSG = spListRemoveCurrent(list);
 			switch (returnMSG) {
 			case SP_LIST_INVALID_CURRENT:
