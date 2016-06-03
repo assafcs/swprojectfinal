@@ -113,18 +113,6 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 		}
 	}
 
-	if (spListGetSize(list) < source->maxSize && !wasInserted) {
-		// The item is largest than everything, insert last
-		SP_LIST_MSG returnMSG = spListInsertLast(list, elementCopy);
-		switch (returnMSG) {
-		case SP_LIST_OUT_OF_MEMORY:
-			spListElementDestroy(elementCopy);
-			return SP_BPQUEUE_OUT_OF_MEMORY;
-		default:
-			return SP_BPQUEUE_SUCCESS;
-		}
-	}
-
 	if (wasInserted) {
 		// Remove the last element if needed
 		if (spListGetSize(list) > source->maxSize) {
@@ -140,10 +128,21 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 			}
 		}
 		return SP_BPQUEUE_SUCCESS;
+	} else {
+		if (spListGetSize(list) < source->maxSize) {
+			// The item is largest than everything, insert last
+			SP_LIST_MSG returnMSG = spListInsertLast(list, elementCopy);
+			switch (returnMSG) {
+			case SP_LIST_OUT_OF_MEMORY:
+				spListElementDestroy(elementCopy);
+				return SP_BPQUEUE_OUT_OF_MEMORY;
+			default:
+				return SP_BPQUEUE_SUCCESS;
+			}
+		} else {
+			return SP_BPQUEUE_FULL;
+		}
 	}
-
-	// The element was not inserted because it is larger than the maximum element and list is full
-	return SP_BPQUEUE_FULL;
 }
 
 SP_BPQUEUE_MSG spBPQueueDequeue(SPBPQueue source) {
