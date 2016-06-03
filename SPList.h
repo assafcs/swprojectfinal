@@ -35,10 +35,15 @@
  *                                internal iterator)
  *   spListGetFirst             - Sets the internal iterator (also called current
  *                                element) to be the first element in the list and
- *                                return it.
+ *                                returns it.
+ *   spListGetLast				- Sets the internal iterator (also called current
+ *                                element) to be the last element in the list and
+ *                                returns it.
  *   spListGetNext              - Advances the list's iterator to the next element
+ *                                and returns it
+ *   spListGetPrevious		    - Moves the list's iterator to the previous element
  *                                and return it
- *   spListClear		      	  - Clears all the data from the list
+ *   spListClear		      	- Clears all the data from the list
  */
 
 /** Type for defining the list */
@@ -111,6 +116,30 @@ int spListGetSize(SPList list);
 SPListElement spListGetFirst(SPList list);
 
 /**
+ * Sets the internal iterator to the last element and retrieves it.
+ *
+ * The list has an internal iterator (also called current element) to allow
+ * iteration over the list's elements. This function sets the iterator to point
+ * to the last element in the list and return it.
+ * Use this to start iterating over the list, searching from the end of
+ * the list and/or get the last element in the list.
+ * (To continue iteration use listGetPrevious)
+ * @code
+ * void f(SPList list) {
+ *   SPListElement first = spListGetLast(list);
+ *   printf("The last element is at address %x\n", first);
+ * }
+ * @endcode
+ *
+ * @param list The list for which to set the iterator and return the last
+ * element.
+ * @return
+ * NULL is a NULL pointer was sent or the list is empty.
+ * The last element of the list otherwise
+ */
+SPListElement spListGetLast(SPList list);
+
+/**
  * Advances the list's iterator to the next element and return it. In case
  * the return value is NULL, the state of the iterator will not be defined, otherwise
  * it will point to the next element in the list.
@@ -122,6 +151,19 @@ SPListElement spListGetFirst(SPList list);
  * The next element on the list in case of success
  */
 SPListElement spListGetNext(SPList list);
+
+/**
+ * Moves the list's iterator to the previous element and return it. In case
+ * the return value is NULL, the state of the iterator will not be defined, otherwise
+ * it will point to the previous element in the list.
+ *
+ * @param list The list for which to advance the iterator
+ * @return
+ * NULL if reached the head of the tail, the iterator is at an invalid state or
+ * a NULL sent as argument
+ * The previous element on the list in case of success
+ */
+SPListElement spListGetPrevious(SPList list);
 
 /**
  * Returns the current element (pointed by the iterator)
@@ -259,9 +301,9 @@ void spListDestroy(SPList list);
  * @param list the list to iterate over
  */
 #define SP_LIST_FOREACH(type,iterator,list) \
-	for(type iterator = listGetFirst(list) ; \
+	for(type iterator = spListGetFirst(list) ; \
 		iterator ;\
-		iterator = listGetNext(list))
+		iterator = spListGetNext(list))
 
 
 #endif /* SPLIST_H_ */

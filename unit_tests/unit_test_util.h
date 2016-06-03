@@ -7,6 +7,10 @@ extern "C" {
 
 #include <stdio.h>
 
+#define ASSERT_SAME(first, second) ASSERT_TRUE(first == second)
+
+#define ASSERT_NOT_NULL(object) ASSERT_TRUE(object != NULL)
+
 #define FAIL(msg) do {\
 		fprintf(stderr,"%s Line %d: %s", __FILE__, __LINE__, msg);\
 		fflush(NULL);\

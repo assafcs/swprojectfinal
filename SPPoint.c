@@ -1,6 +1,8 @@
+
 #include "SPPoint.h"
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #define ZERO 0
 
@@ -12,16 +14,28 @@ struct sp_point_t {
 
 SPPoint spPointCreate(double* data, int dim, int index) {
 	assert(!(data == NULL || dim <= ZERO  || index < ZERO));
-	SPPoint newPoint = {NULL, index, dim};
-	newPoint->pData = (double*) malloc (dim * sizeof(double));
-	if (newPoint->pData == NULL){
+
+	SPPoint createdPoint = (SPPoint) malloc(sizeof(*createdPoint));
+	if (createdPoint == NULL) {
 		return NULL;
 	}
+
+	double* pointData = (double*) malloc(dim * sizeof(double));
+	if (pointData == NULL) {
+		free(createdPoint);
+		return NULL;
+	}
+
+	// TODO: This could be done using memcpy
 	int i;
 	for (i = 0; i < dim; i++){
-		newPoint->pData[i] = data[i];
+		pointData[i] = data[i];
 	}
-	return newPoint;
+
+	createdPoint->pData = pointData;
+	createdPoint->index = index;
+	createdPoint->dim = dim;
+	return createdPoint;
 
 }
 

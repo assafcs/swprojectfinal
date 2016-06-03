@@ -16,6 +16,9 @@
 #define MSG_ROW_PREFIX "- message: "
 #define NEW_LINE "/n"
 
+SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char* file,
+		const char* function, const int line);
+
 // Global variable holding the logger
 SPLogger logger = NULL;
 
@@ -60,22 +63,22 @@ void spLoggerDestroy() {
 	logger = NULL;
 }
 
-SP_LOGGER_MSG spLoggerPrintError(const char* msg, const char* file, const char* file,
-		const char* function, const int line){
+SP_LOGGER_MSG spLoggerPrintError(const char* msg, const char* file,
+		const char* function, const int line) {
 	return generalLoggerPrint(ERROR_HEADER, msg, file, function, line);
 }
 
-SP_LOGGER_MSG spLoggerPrintWarning(const char* msg, const char* file, const char* file,
-		const char* function, const int line){
+SP_LOGGER_MSG spLoggerPrintWarning(const char* msg, const char* file,
+		const char* function, const int line) {
 	return generalLoggerPrint(WARNING_HEADER, msg, file, function, line);
 }
 
-SP_LOGGER_MSG spLoggerPrintDebug(const char* msg, const char* file, const char* file,
-		const char* function, const int line){
+SP_LOGGER_MSG spLoggerPrintDebug(const char* msg, const char* file,
+		const char* function, const int line) {
 	return generalLoggerPrint(DEBUG_HEADER, msg, file, function, line);
 }
 
-SP_LOGGER_MSG spLoggerPrintInfo(const char* msg){
+SP_LOGGER_MSG spLoggerPrintInfo(const char* msg) {
 	if (logger == NULL){
 		return SP_LOGGER_UNDIFINED;
 	}
@@ -91,7 +94,7 @@ SP_LOGGER_MSG spLoggerPrintInfo(const char* msg){
 		if (res < 0){
 			return SP_LOGGER_WRITE_FAIL;
 		}
-		res = fprintf(NEW_LINE);
+		res = printf(NEW_LINE);
 		if (res < 0){
 			return SP_LOGGER_WRITE_FAIL;
 		}
@@ -99,7 +102,7 @@ SP_LOGGER_MSG spLoggerPrintInfo(const char* msg){
 	return SP_LOGGER_SUCCESS;
 }
 
-SP_LOGGER_MSG spLoggerPrintMsg(const char* msg){
+SP_LOGGER_MSG spLoggerPrintMsg(const char* msg) {
 	if (logger == NULL){
 		return SP_LOGGER_UNDIFINED;
 	}
@@ -110,7 +113,7 @@ SP_LOGGER_MSG spLoggerPrintMsg(const char* msg){
 	if (res < 0){
 		return SP_LOGGER_WRITE_FAIL;
 	}
-	res = fprintf(NEW_LINE);
+	res = printf(NEW_LINE);
 	if (res < 0){
 		return SP_LOGGER_WRITE_FAIL;
 	}
@@ -118,7 +121,7 @@ SP_LOGGER_MSG spLoggerPrintMsg(const char* msg){
 }
 
 SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char* file,
-		const char* function, const int line){
+		const char* function, const int line) {
 	if (logger == NULL){
 		return SP_LOGGER_UNDIFINED;
 	}
@@ -158,7 +161,7 @@ int loggerDetailLines(const char* header, const char* msg, const char* file, con
 	if (res < 0){
 		return 0;
 	}
-	res = fprintf(NEW_LINE);
+	res = printf(NEW_LINE);
 	if (res < 0){
 		return 0;
 	}
