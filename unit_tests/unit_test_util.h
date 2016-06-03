@@ -9,7 +9,11 @@ extern "C" {
 
 #define ASSERT_SAME(first, second) ASSERT_TRUE(first == second)
 
-#define ASSERT_NOT_NULL(object) ASSERT_TRUE(object != NULL)
+#define ASSERT_NOT_SAME(first, second) ASSERT_TRUE(first != second)
+
+#define ASSERT_NOT_NULL(object) ASSERT_NOT_SAME(object, NULL)
+
+#define ASSERT_NULL(object) ASSERT_SAME(object, NULL)
 
 #define FAIL(msg) do {\
 		fprintf(stderr,"%s Line %d: %s", __FILE__, __LINE__, msg);\
