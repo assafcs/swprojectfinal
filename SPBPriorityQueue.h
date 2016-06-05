@@ -114,12 +114,22 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element);
 SP_BPQUEUE_MSG spBPQueueDequeue(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns a copy of the element with the lowest priority.
+ *
+ * @param source The queue to peek into
+ * @return
+ *  NULL in case the given queue is NULL, empty, or a memory allocation failure occurred
+ * 	The element with the lowest priority otherwise.
  */
 SPListElement spBPQueuePeek(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns a copy of the element with the highest priority.
+ *
+ * @param source The queue to peek into
+ * @return
+ *  NULL in case the given queue is NULL, empty, or a memory allocation failure occurred
+ * 	The element with the highest priority otherwise.
  */
 SPListElement spBPQueuePeekLast(SPBPQueue source);
 

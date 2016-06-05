@@ -246,6 +246,13 @@ static bool testEnqueue() {
 
 	// The state of the queue should be e1->e3->e2->e4
 
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT(fullEnqueue(queue, 5, 1.0));
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT(fullEnqueue(queue, 6, 0.5));
+
 	// Destroy everything
 	spBPQueueDestroy(queue);
 	spListElementDestroy(e1);
@@ -298,6 +305,77 @@ static bool testClear() {
 
 }
 
+static bool testPeek() {
+	ASSERT_NULL(spBPQueuePeek(NULL));
+
+	SPBPQueue queue = spBPQueueCreate(4);
+
+	ASSERT_NULL(spBPQueuePeek(queue));
+
+	SPListElement e1 = spListElementCreate(1, 2.0);
+	SPListElement e2 = spListElementCreate(2, 3.0);
+	SPListElement e3 = spListElementCreate(2, 1.0);
+	SPListElement e4 = spListElementCreate(2, 4.0);
+
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeek(queue), e1));
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeek(queue), e1));
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeek(queue), e3));
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeek(queue), e3));
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeek(queue), e3));
+	ASSERT(fullEnqueue(queue, 1, 2.0));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeek(queue), e3));
+	ASSERT(fullEnqueue(queue, 2, 4.0));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeek(queue), e3));
+
+	spBPQueueDestroy(queue);
+
+	spListElementDestroy(e1);
+	spListElementDestroy(e2);
+	spListElementDestroy(e3);
+	spListElementDestroy(e4);
+	return true;
+}
+
+static bool testPeekLast() {
+
+	ASSERT_NULL(spBPQueuePeekLast(NULL));
+
+	SPBPQueue queue = spBPQueueCreate(3);
+
+	ASSERT_NULL(spBPQueuePeekLast(queue));
+
+	SPListElement e1 = spListElementCreate(2, 2.0);
+	SPListElement e2 = spListElementCreate(1, 2.0);
+	SPListElement e3 = spListElementCreate(0, 2.01);
+
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeekLast(queue), e1));
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeekLast(queue), e1));
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeekLast(queue), e1));
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeekLast(queue), e2));
+	ASSERT(successfulDequeue(queue));
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT(listElementsEqualsNotSame(spBPQueuePeekLast(queue), e3));
+
+	spBPQueueDestroy(queue);
+
+	spListElementDestroy(e1);
+	spListElementDestroy(e2);
+	spListElementDestroy(e3);
+
+	return true;
+
+
+
+}
 
 /*** Helper assertion methods ***/
 
@@ -391,6 +469,8 @@ int main() {
 	RUN_TEST(testClear);
 	RUN_TEST(testEnqueue);
 	RUN_TEST(testDequeue);
+	RUN_TEST(testPeek);
+	RUN_TEST(testPeekLast);
 	RUN_TEST(testMultipleQueueOperations);
 	return 0;
 }
