@@ -12,7 +12,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-// Method declaration
+/*** Method declaration ***/
+
 SPBPQueue spBPQueueInnerCreate(SPList innerList, int maxSize);
 SPListElement spBPQueueFirstElement(SPBPQueue source);
 SPListElement spBPQueueLastElement(SPBPQueue source);
@@ -48,7 +49,9 @@ SPBPQueue spBPQueueInnerCreate(SPList innerList, int maxSize) {
 }
 
 SPBPQueue spBPQueueCopy(SPBPQueue source) {
-	assert(source != NULL);
+	if (source == NULL) {
+		return NULL;
+	}
 	SPList listCopy = spListCopy(source->innerList);
 	if (listCopy == NULL) {
 		return NULL;
@@ -72,13 +75,11 @@ void spBPQueueClear(SPBPQueue source) {
 }
 
 int spBPQueueSize(SPBPQueue source) {
-	assert(source != NULL);
-	return spListGetSize(source->innerList);
+	return source == NULL ? -1 : spListGetSize(source->innerList);
 }
 
 int spBPQueueGetMaxSize(SPBPQueue source) {
-	assert(source != NULL);
-	return source->maxSize;
+	return source == NULL ? -1 : source->maxSize;
 }
 
 SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
@@ -103,10 +104,6 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 			SP_LIST_MSG returnMSG = spListInsertBeforeCurrent(list, elementCopy);
 
 			switch (returnMSG) {
-			case SP_LIST_INVALID_CURRENT:
-			case SP_LIST_NULL_ARGUMENT:
-				spListElementDestroy(elementCopy);
-				return SP_BPQUEUE_ERROR;
 			case SP_LIST_OUT_OF_MEMORY:
 				spListElementDestroy(elementCopy);
 				return SP_BPQUEUE_OUT_OF_MEMORY;
@@ -121,15 +118,7 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 		// Remove the last element if needed
 		if (wasFull) {
 			spListGetLast(list);
-			SP_LIST_MSG returnMSG = spListRemoveCurrent(list);
-			switch (returnMSG) {
-			case SP_LIST_INVALID_CURRENT:
-			case SP_LIST_NULL_ARGUMENT:
-				spListElementDestroy(elementCopy);
-				return SP_BPQUEUE_ERROR;
-			default:
-				break;
-			}
+			spListRemoveCurrent(list);
 		}
 		return SP_BPQUEUE_SUCCESS;
 	} else {
@@ -158,65 +147,46 @@ SP_BPQUEUE_MSG spBPQueueDequeue(SPBPQueue source) {
 	}
 
 	spListGetFirst(source->innerList);
-	SP_LIST_MSG returnMSG = spListRemoveCurrent(source->innerList);
+	spListRemoveCurrent(source->innerList);
 
-	switch (returnMSG) {
-	case SP_LIST_INVALID_CURRENT:
-	case SP_LIST_NULL_ARGUMENT:
-		return SP_BPQUEUE_ERROR;
-	default:
-		return SP_BPQUEUE_SUCCESS;
-	}
+	return SP_BPQUEUE_SUCCESS;
 }
 
 SPListElement spBPQueuePeek(SPBPQueue source) {
-	assert(source != NULL);
-
-	SPListElement minElement = spBPQueueFirstElement(source);
-	return minElement == NULL ? NULL : spListElementCopy(minElement);
+	return spListElementCopy(spBPQueueFirstElement(source));
 }
 
 SPListElement spBPQueuePeekLast(SPBPQueue source) {
-	assert(source != NULL);
-
-	SPListElement maxElement = spBPQueueLastElement(source);
-	return maxElement == NULL ? NULL : spListElementCopy(maxElement);
+	return spListElementCopy(spBPQueueLastElement(source));
 }
 
 double spBPQueueMinValue(SPBPQueue source) {
-	assert(source != NULL);
-	SPListElement minElement = spBPQueueFirstElement(source);
-	return minElement == NULL ? -1 : spListElementGetValue(minElement);
+	return spListElementGetValue(spBPQueueFirstElement(source));
 }
 
 double spBPQueueMaxValue(SPBPQueue source) {
-	assert(source != NULL);
-	SPListElement maxElement = spBPQueueLastElement(source);
-	return maxElement == NULL ? -1 : spListElementGetValue(maxElement);
+	return spListElementGetValue(spBPQueueLastElement(source));
 }
 
 bool spBPQueueIsEmpty(SPBPQueue source) {
 	assert(source != NULL);
-	return spListGetSize(source->innerList) == 0;
+	return spBPQueueSize(source) == 0;
 }
 
 bool spBPQueueIsFull(SPBPQueue source) {
 	assert(source != NULL);
-	return spListGetSize(source->innerList) == source->maxSize;
+	return spBPQueueSize(source) == spBPQueueGetMaxSize(source);
 }
 
 SPListElement spBPQueueFirstElement(SPBPQueue source) {
-	assert(source != NULL);
-
-	if (spBPQueueIsEmpty(source)) {
+	if (source == NULL || spBPQueueIsEmpty(source)) {
 		return NULL;
 	}
 	return spListGetFirst(source->innerList);
 }
 
 SPListElement spBPQueueLastElement(SPBPQueue source) {
-
-	if (spBPQueueIsEmpty(source)) {
+	if (source == NULL || spBPQueueIsEmpty(source)) {
 		return NULL;
 	}
 	return spListGetLast(source->innerList);

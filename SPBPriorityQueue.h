@@ -14,7 +14,6 @@ typedef struct sp_bp_queue_t* SPBPQueue;
 
 /** type for error reporting **/
 typedef enum sp_bp_queue_msg_t {
-	SP_BPQUEUE_ERROR,
 	SP_BPQUEUE_OUT_OF_MEMORY,
 	SP_BPQUEUE_FULL,
 	SP_BPQUEUE_EMPTY,
@@ -23,32 +22,61 @@ typedef enum sp_bp_queue_msg_t {
 } SP_BPQUEUE_MSG;
 
 /**
- * TODO Complete documentation
+ * Allocates a new bounded priority queue.
+ *
+ * @param maxSize the maximum capacity of the queue
+ * @return
+ * 	NULL - If allocations failed.
+ * 	A new queue in case of success.
  */
 SPBPQueue spBPQueueCreate(int maxSize);
 
 /**
- * TODO Complete documentation
+ * Creates a copy of the given queue.
+ *
+ * The new copy will contain all the elements from the source queue in the same
+ * priority order.
+ *
+ * @param source The queue to copy
+ * @return
+ *  NULL if a NULL was sent or a memory allocation failed.
+ *  Otherwise, a bounded priority queue containing the same elements with same priority order.
  */
 SPBPQueue spBPQueueCopy(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Deallocates the given queue. Clears all elements by using the stored free function.
+ *
+ * @param source The queue to be deallocated. If queue is NULL nothing will be done
  */
 void spBPQueueDestroy(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Removes all elements from the given queue.
+ *
+ * The elements are deallocated using the stored freeing function
+ *
+ * @param source The queue to remove all element from. If queue is NULL nothing will be done
  */
 void spBPQueueClear(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns the number of elements in the queue.
+ *
+ * @param source The queue for which size is requested.
+ * @return
+ *  -1 if a NULL pointer was sent.
+ * Otherwise the number of elements in the queue.
  */
 int spBPQueueSize(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns the maximum capacity of the queue.
+ *
+ * @param source The queue for which maximum capacity is requested.
+ * @return
+ *  -1 if a NULL pointer was sent.
+ * Otherwise the maximum capacity the queue.
  */
 int spBPQueueGetMaxSize(SPBPQueue source);
 
