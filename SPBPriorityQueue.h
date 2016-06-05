@@ -154,12 +154,20 @@ double spBPQueueMinValue(SPBPQueue source);
 double spBPQueueMaxValue(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns whether the queue is considered empty or not.
+ *
+ * @param source The queue to check for emptiness. NULL is not allowed!
+ * @return
+ *  True if the queue is considered empty, false otherwise
  */
 bool spBPQueueIsEmpty(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns whether the queue is considered full or not, that is, if the queue is at full capacity.
+ *
+ * @param source The queue to check for fullness. NULL is not allowed!
+ * @return
+ *  True if the queue is considered full, false otherwise
  */
 bool spBPQueueIsFull(SPBPQueue source);
 
