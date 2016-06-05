@@ -81,12 +81,35 @@ int spBPQueueSize(SPBPQueue source);
 int spBPQueueGetMaxSize(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Insert a copy of the given element to the given queue and returns
+ * a message informing the result of the operation
+ *
+ * If the queue is at full capacity, the element with the highest priority will be discarded from queue.
+ * In case the given element is of the highest priority, it will not be inserted, and a SP_BPQUEUE_FULL
+ * message will be returned
+ *
+ * @param source The queue to insert the element to
+ * @param element The element to insert
+ * @return
+ *   SP_BPQUEUE_INVALID_ARGUMENT - In case a NULL was sent as the queue or element
+ *   SP_BPQUEUE_OUT_OF_MEMORY - In case of memory allocation failure
+ *   SP_BPQUEUE_FULL - In case the queue is at full capacity, and the given element's priority
+ *   				   is higher than all of the existing elements in the queue
+ *   SP_BPQUEUE_SUCCESS - In case the element was inserted to the queue (even if another element
+ *   					  was discarded as a result of maximum capacity)
  */
 SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element);
 
 /**
- * TODO Complete documentation
+ * Removed the element with the lowest priority from the queue.
+ *
+ * If the queue is empty, nothing will happen and a proper message will be returned
+ *
+ * @param source The queue to dequeue from
+ * @return
+ * 	 SP_BPQUEUE_INVALID_ARGUMENT - In case a NULL was sent as the queue
+ * 	 SP_BPQUEUE_EMPTY - In case the queue is empty
+ * 	 SP_BPQUEUE_SUCCESS - In case the dequeue was performed successfully.
  */
 SP_BPQUEUE_MSG spBPQueueDequeue(SPBPQueue source);
 

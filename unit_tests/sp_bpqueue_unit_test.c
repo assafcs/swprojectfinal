@@ -113,6 +113,9 @@ static bool testMultipleQueueOperations() {
 }
 
 static bool testDequeue() {
+
+	ASSERT_SAME(spBPQueueDequeue(NULL), SP_BPQUEUE_INVALID_ARGUMENT);
+
 	SPBPQueue queue = spBPQueueCreate(4);
 
 	SPListElement e1 = spListElementCreate(2, 10.0);
@@ -202,6 +205,11 @@ static bool testEnqueue() {
 	SPListElement e2 = spListElementCreate(5, 2.0);
 	SPListElement e3 = spListElementCreate(5, 1.0);
 	SPListElement e4 = spListElementCreate(3, 2.1);
+
+	ASSERT_SAME(spBPQueueEnqueue(NULL, NULL), SP_BPQUEUE_INVALID_ARGUMENT);
+	ASSERT_SAME(spBPQueueEnqueue(NULL, e1), SP_BPQUEUE_INVALID_ARGUMENT);
+	ASSERT_SAME(spBPQueueEnqueue(queue, NULL), SP_BPQUEUE_INVALID_ARGUMENT);
+
 
 	ASSERT(successfulEnqueue(queue, e1));
 	ASSERT(successfulEnqueue(queue, e3));

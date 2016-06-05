@@ -83,7 +83,9 @@ int spBPQueueGetMaxSize(SPBPQueue source) {
 }
 
 SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
-	assert(source != NULL && element != NULL);
+	if (source == NULL || element == NULL) {
+		return SP_BPQUEUE_INVALID_ARGUMENT;
+	}
 
 	SPListElement elementCopy = spListElementCopy(element);
 	if (elementCopy == NULL) {
@@ -123,8 +125,8 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 		return SP_BPQUEUE_SUCCESS;
 	} else {
 		if (spBPQueueIsFull(source)) {
+			spListElementDestroy(elementCopy);
 			return SP_BPQUEUE_FULL;
-
 		} else {
 			// The item is largest than everything, insert last
 			SP_LIST_MSG returnMSG = spListInsertLast(list, elementCopy);
@@ -140,7 +142,9 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 }
 
 SP_BPQUEUE_MSG spBPQueueDequeue(SPBPQueue source) {
-	assert(source != NULL);
+	if (source == NULL) {
+		return SP_BPQUEUE_INVALID_ARGUMENT;
+	}
 
 	if (spBPQueueIsEmpty(source)) {
 		return SP_BPQUEUE_EMPTY;
