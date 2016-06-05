@@ -134,12 +134,22 @@ SPListElement spBPQueuePeek(SPBPQueue source);
 SPListElement spBPQueuePeekLast(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns the minimum value of elements in the queue
+ *
+ * @param source The queue for which the minimum value is requested
+ * @return
+ *  -1 in case the given queue is NULL of empty
+ *  The minimum value of elements in the queue otherwise.
  */
 double spBPQueueMinValue(SPBPQueue source);
 
 /**
- * TODO Complete documentation
+ * Returns the maximum value of elements in the queue
+ *
+ * @param source The queue for which the maximum value is requested
+ * @return
+ *  -1 in case the given queue is NULL of empty
+ *  The maximum value of elements in the queue otherwise.
  */
 double spBPQueueMaxValue(SPBPQueue source);
 

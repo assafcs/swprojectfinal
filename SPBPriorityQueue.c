@@ -25,7 +25,9 @@ struct sp_bp_queue_t {
 };
 
 SPBPQueue spBPQueueCreate(int maxSize) {
-	assert(maxSize > 0);
+	if (maxSize <= 0) {
+		return NULL;
+	}
 	SPList newList = spListCreate();
 	if (newList == NULL) {
 		return NULL;
@@ -100,7 +102,7 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 	// Advance iterator to the proper element's place
 	SP_LIST_FOREACH(SPListElement, currentElement, list) {
 
-		if (spListElementCompare(elementCopy, currentElement) < 0 && !wasInserted) {
+		if (spListElementCompare(elementCopy, currentElement) < 0) {
 
 			// Modifying while iterating - bad practice but is more efficient here.
 			SP_LIST_MSG returnMSG = spListInsertBeforeCurrent(list, elementCopy);
@@ -113,6 +115,7 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 				break;
 			}
 			wasInserted = true;
+			break;
 		}
 	}
 

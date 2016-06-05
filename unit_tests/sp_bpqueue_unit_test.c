@@ -19,6 +19,10 @@ static bool queueState(SPBPQueue queue, int expectedSize, SPListElement expected
 static SPListElement peekAndDequeue(SPBPQueue queue);
 
 static bool testQueueCreate() {
+
+	ASSERT_NULL(spBPQueueCreate(0));
+	ASSERT_NULL(spBPQueueCreate(-2));
+
 	SPBPQueue queue = spBPQueueCreate(1);
 	ASSERT_NOT_NULL(queue);
 	ASSERT_SAME(spBPQueueGetMaxSize(queue), 1);
@@ -373,7 +377,70 @@ static bool testPeekLast() {
 
 	return true;
 
+}
 
+static bool testMinValue() {
+
+	ASSERT_SAME(spBPQueueMinValue(NULL), -1);
+
+	SPBPQueue queue = spBPQueueCreate(3);
+
+	ASSERT_SAME(spBPQueueMinValue(queue), -1);
+
+	SPListElement e1 = spListElementCreate(2, 2.0);
+	SPListElement e2 = spListElementCreate(1, 2.1);
+	SPListElement e3 = spListElementCreate(3, 1.99);
+
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT_SAME(spBPQueueMinValue(queue), 2.0);
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT_SAME(spBPQueueMinValue(queue), 2.0);
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT_SAME(spBPQueueMinValue(queue), 1.99);
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT_SAME(spBPQueueMinValue(queue), 1.99);
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT_SAME(spBPQueueMinValue(queue), 1.99);
+
+	spBPQueueDestroy(queue);
+
+	spListElementDestroy(e1);
+	spListElementDestroy(e2);
+	spListElementDestroy(e3);
+
+	return true;
+}
+
+static bool testMaxValue() {
+
+	ASSERT_SAME(spBPQueueMaxValue(NULL), -1);
+
+	SPBPQueue queue = spBPQueueCreate(3);
+
+	ASSERT_SAME(spBPQueueMaxValue(queue), -1);
+
+	SPListElement e1 = spListElementCreate(2, 2.0);
+	SPListElement e2 = spListElementCreate(1, 2.1);
+	SPListElement e3 = spListElementCreate(3, 1.99);
+
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT_SAME(spBPQueueMaxValue(queue), 2.0);
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT_SAME(spBPQueueMaxValue(queue), 2.1);
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT_SAME(spBPQueueMaxValue(queue), 2.1);
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT_SAME(spBPQueueMaxValue(queue), 2.0);
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT_SAME(spBPQueueMaxValue(queue), 2.0);
+
+	spBPQueueDestroy(queue);
+
+	spListElementDestroy(e1);
+	spListElementDestroy(e2);
+	spListElementDestroy(e3);
+
+	return true;
 
 }
 
@@ -471,6 +538,8 @@ int main() {
 	RUN_TEST(testDequeue);
 	RUN_TEST(testPeek);
 	RUN_TEST(testPeekLast);
+	RUN_TEST(testMinValue);
+	RUN_TEST(testMaxValue);
 	RUN_TEST(testMultipleQueueOperations);
 	return 0;
 }
