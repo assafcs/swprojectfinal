@@ -30,11 +30,53 @@ static bool testQueueCreate() {
 	return true;
 }
 
+static bool testSingletonQueue() {
+	SPBPQueue queue = spBPQueueCreate(1);
+	ASSERT_NOT_NULL(queue);
+	ASSERT(emptyQueue(queue));
+
+	SPListElement e1 = spListElementCreate(2, 10.0);
+	ASSERT(successfulEnqueue(queue, e1));
+	ASSERT(queueState(queue, 1, e1, e1));
+
+	ASSERT(fullEnqueue(queue, 2, 11.0));
+	ASSERT(queueState(queue, 1, e1, e1));
+	ASSERT(fullEnqueue(queue, 3, 10.0));
+	ASSERT(queueState(queue, 1, e1, e1));
+	ASSERT(fullEnqueue(queue, 2, 10.0));
+	ASSERT(queueState(queue, 1, e1, e1));
+
+	SPListElement e2 = spListElementCreate(1, 10.0);
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT(queueState(queue, 1, e2, e2));
+
+	SPListElement e3 = spListElementCreate(1, 9.999);
+	ASSERT(successfulEnqueue(queue, e3));
+	ASSERT(queueState(queue, 1, e3, e3));
+
+	ASSERT(fullEnqueue(queue, 1, 9.999));
+	ASSERT(queueState(queue, 1, e3, e3));
+
+	ASSERT(successfulDequeue(queue));
+	ASSERT(emptyQueue(queue));
+
+	ASSERT(successfulEnqueue(queue, e2));
+	ASSERT(queueState(queue, 1, e2, e2));
+
+	spBPQueueClear(queue);
+	ASSERT(emptyQueue(queue));
+
+	spBPQueueDestroy(queue);
+
+	spListElementDestroy(e1);
+	spListElementDestroy(e2);
+
+	return true;
+}
+
 static bool testMultipleQueueOperations() {
 	SPBPQueue queue = spBPQueueCreate(3);
-
 	ASSERT_NOT_NULL(queue);
-
 	ASSERT(emptyQueue(queue));
 
 	SPListElement e1 = spListElementCreate(2, 10.0);
@@ -594,6 +636,7 @@ int main() {
 	RUN_TEST(testEmpty);
 	RUN_TEST(testFull);
 	RUN_TEST(testMultipleQueueOperations);
+	RUN_TEST(testSingletonQueue);
 	return 0;
 }
 
