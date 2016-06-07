@@ -49,6 +49,7 @@ void spPointDestroy(SPPoint point) {
 	if (point != NULL){
 		free(point->pData);
 	}
+	free(point);
 }
 
 int spPointGetDimension(SPPoint point)  {

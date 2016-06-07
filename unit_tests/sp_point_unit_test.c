@@ -36,9 +36,38 @@ bool pointBasicL2Distance() {
 	spPointDestroy(q);
 	return true;
 }
+
+bool pointGettersTest() {
+	double data1[2] = { 1.0, 1.0, 2.0 };
+	int dim1 = 3;
+	int index1 = 1;
+	SPPoint p = spPointCreate((double *)data1, dim1, index1);
+	ASSERT_TRUE(spPointGetAxisCoor(p, 0) == 1.0);
+	ASSERT_TRUE(spPointGetAxisCoor(p, 1) == 1.0);
+	ASSERT_FALSE(spPointGetAxisCoor(p, 2) == 1.0);
+	ASSERT_TRUE(spPointGetAxisCoor(p, 2) == 2.0);
+	ASSERT_TRUE(spPointGetIndex(p) == 1);
+	ASSERT_TRUE(spPointGetDimension(p) == 3);
+	return true;
+}
+
+bool pointDestroyTest() {
+	double data1[2] = { 1.0, 1.0, 2.0 };
+	int dim1 = 3;
+	int index1 = 1;
+	SPPoint p = spPointCreate((double *)data1, dim1, index1);
+	spPointDestroy(p);
+	ASSERT_TRUE(p == NULL);
+	return true;
+}
+
+
+
 int main() {
-	printf("ASSAF AAAAAAAA---,,,");
 	RUN_TEST(pointBasicCopyTest);
 	RUN_TEST(pointBasicL2Distance);
+	RUN_TEST(pointGettersTest);
+	RUN_TEST(pointDestroyTest);
+
 	return 0;
 }
