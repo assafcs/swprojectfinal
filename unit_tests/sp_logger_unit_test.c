@@ -70,9 +70,24 @@ static bool basicLoggerDebugTest() {
 	return true;
 }
 
+//All messages should be printed in debug level
+static bool loggerOnlyErrorTest() {
+	const char* expectedFile = "loggerOnlyErrorTestExp.log";
+	const char* testFile = "loggerOnlyErrorTest.log";
+	ASSERT_TRUE(spLoggerCreate(testFile,SP_LOGGER_ERROR_LEVEL) == SP_LOGGER_SUCCESS);
+	ASSERT_TRUE(spLoggerPrintError("MSGA","sp_logger_unit_test.c",__func__,__LINE__) == SP_LOGGER_SUCCESS);
+	ASSERT_TRUE(spLoggerPrintWarning("MSGB","sp_logger_unit_test.c",__func__,__LINE__) == SP_LOGGER_SUCCESS);
+	ASSERT_TRUE(spLoggerPrintInfo("MSGC") == SP_LOGGER_SUCCESS);
+	ASSERT_TRUE(spLoggerPrintDebug("MSGD","sp_logger_unit_test.c",__func__,__LINE__) == SP_LOGGER_SUCCESS);
+	spLoggerDestroy();
+	ASSERT_TRUE(identicalFiles(testFile,expectedFile));
+	return true;
+}
+
 int main() {
 	RUN_TEST(basicLoggerTest);
 	RUN_TEST(basicLoggerErrorTest);
 	RUN_TEST(basicLoggerDebugTest);
+	RUN_TEST(loggerOnlyErrorTest);
 	return 0;
 }

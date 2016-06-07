@@ -94,7 +94,7 @@ SP_LOGGER_MSG spLoggerPrintInfo(const char* msg) {
 		if (res < 0){
 			return SP_LOGGER_WRITE_FAIL;
 		}
-		res = printf(NEW_LINE);
+		res = fprintf(logger->outputChannel, NEW_LINE);
 		if (res < 0){
 			return SP_LOGGER_WRITE_FAIL;
 		}
@@ -113,13 +113,16 @@ SP_LOGGER_MSG spLoggerPrintMsg(const char* msg) {
 	if (res < 0){
 		return SP_LOGGER_WRITE_FAIL;
 	}
-	res = printf(NEW_LINE);
+	res = fprintf(logger->outputChannel, NEW_LINE);
 	if (res < 0){
 		return SP_LOGGER_WRITE_FAIL;
 	}
 	return SP_LOGGER_SUCCESS;
 }
 
+// In order to reduce code lines, mutual logic of ERROR, WARNING and DEBUG is
+// implemented in one place.
+// This method validates the input and prints whats needed.
 SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char* file,
 		const char* function, const int line) {
 	if (logger == NULL){
@@ -140,6 +143,7 @@ SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char
 }
 
 
+// Method for printing in the assignment required format
 int loggerDetailLines(const char* header, const char* msg, const char* file, const char* function, const int line){
 	int res = fprintf(logger->outputChannel, header, NEW_LINE);
 	if (res < 0){
@@ -161,7 +165,7 @@ int loggerDetailLines(const char* header, const char* msg, const char* file, con
 	if (res < 0){
 		return 0;
 	}
-	res = printf(NEW_LINE);
+	res = fprintf(logger->outputChannel, NEW_LINE);
 	if (res < 0){
 		return 0;
 	}
