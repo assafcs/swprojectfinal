@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 //File open mode
 #define SP_LOGGER_OPEN_MODE "w"
@@ -127,8 +128,8 @@ SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char
 	if (msg == NULL || file == NULL || function == NULL || line < 0){
 		return SP_LOGGER_INVAlID_ARGUMENT;
 	}
-	if ((logger->level == SP_LOGGER_ERROR_LEVEL && header == ERROR_HEADER) || (
-			logger->level == SP_LOGGER_WARNING_ERROR_LEVEL && (header == WARNING_HEADER || header == ERROR_HEADER)) || (
+	if ((logger->level == SP_LOGGER_ERROR_LEVEL && strcmp(header, ERROR_HEADER) == 0) || (
+			logger->level == SP_LOGGER_WARNING_ERROR_LEVEL && (strcmp(header, WARNING_HEADER) == 0  || strcmp(header, ERROR_HEADER) == 0)) || (
 					logger->level == SP_LOGGER_DEBUG_INFO_WARNING_ERROR_LEVEL)){
 		int res = loggerDetailLines(header, msg, file, function, line);
 		if (res == 0){
