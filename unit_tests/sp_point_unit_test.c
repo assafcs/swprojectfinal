@@ -48,6 +48,7 @@ bool pointGettersTest() {
 	ASSERT_TRUE(spPointGetAxisCoor(p, 2) == 2.0);
 	ASSERT_TRUE(spPointGetIndex(p) == 1);
 	ASSERT_TRUE(spPointGetDimension(p) == 3);
+	spPointDestroy(p);
 	return true;
 }
 
