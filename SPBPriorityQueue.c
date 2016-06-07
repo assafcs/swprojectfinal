@@ -20,7 +20,6 @@ SPListElement spBPQueueLastElement(SPBPQueue source);
 
 struct sp_bp_queue_t {
 	SPList innerList;
-	SPListElement innerListMaxValueElement;
 	int maxSize;
 };
 
@@ -89,11 +88,6 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 		return SP_BPQUEUE_INVALID_ARGUMENT;
 	}
 
-	SPListElement elementCopy = spListElementCopy(element);
-	if (elementCopy == NULL) {
-		return SP_BPQUEUE_OUT_OF_MEMORY;
-	}
-
 	bool wasFull = spBPQueueIsFull(source);
 
 	SPList list = source->innerList;
@@ -102,14 +96,13 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 	// Advance iterator to the proper element's place
 	SP_LIST_FOREACH(SPListElement, currentElement, list) {
 
-		if (spListElementCompare(elementCopy, currentElement) < 0) {
+		if (spListElementCompare(element, currentElement) < 0) {
 
 			// Modifying while iterating - bad practice but is more efficient here.
-			SP_LIST_MSG returnMSG = spListInsertBeforeCurrent(list, elementCopy);
+			SP_LIST_MSG returnMSG = spListInsertBeforeCurrent(list, element);
 
 			switch (returnMSG) {
 			case SP_LIST_OUT_OF_MEMORY:
-				spListElementDestroy(elementCopy);
 				return SP_BPQUEUE_OUT_OF_MEMORY;
 			default:
 				break;
@@ -128,14 +121,12 @@ SP_BPQUEUE_MSG spBPQueueEnqueue(SPBPQueue source, SPListElement element) {
 		return SP_BPQUEUE_SUCCESS;
 	} else {
 		if (spBPQueueIsFull(source)) {
-			spListElementDestroy(elementCopy);
 			return SP_BPQUEUE_FULL;
 		} else {
 			// The item is largest than everything, insert last
-			SP_LIST_MSG returnMSG = spListInsertLast(list, elementCopy);
+			SP_LIST_MSG returnMSG = spListInsertLast(list, element);
 			switch (returnMSG) {
 			case SP_LIST_OUT_OF_MEMORY:
-				spListElementDestroy(elementCopy);
 				return SP_BPQUEUE_OUT_OF_MEMORY;
 			default:
 				return SP_BPQUEUE_SUCCESS;

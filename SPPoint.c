@@ -26,7 +26,6 @@ SPPoint spPointCreate(double* data, int dim, int index) {
 		return NULL;
 	}
 
-	// TODO: This could be done using memcpy
 	int i;
 	for (i = 0; i < dim; i++){
 		pointData[i] = data[i];
