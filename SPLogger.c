@@ -86,15 +86,11 @@ SP_LOGGER_MSG spLoggerPrintInfo(const char* msg) {
 		return SP_LOGGER_INVAlID_ARGUMENT;
 	}
 	if (logger->level == SP_LOGGER_DEBUG_INFO_WARNING_ERROR_LEVEL || logger->level == SP_LOGGER_INFO_WARNING_ERROR_LEVEL){
-		int res = fprintf(logger->outputChannel, INFO_HEADER, NEW_LINE);
+		int res = loggerPrintText(INFO_HEADER);
 		if (res < 0){
 			return SP_LOGGER_WRITE_FAIL;
 		}
-		res = fprintf(logger->outputChannel, MSG_ROW_PREFIX, msg, NEW_LINE);
-		if (res < 0){
-			return SP_LOGGER_WRITE_FAIL;
-		}
-		res = fprintf(logger->outputChannel, NEW_LINE);
+		res = loggerPrintRow(MSG_ROW_PREFIX, msg);
 		if (res < 0){
 			return SP_LOGGER_WRITE_FAIL;
 		}
@@ -109,11 +105,7 @@ SP_LOGGER_MSG spLoggerPrintMsg(const char* msg) {
 	if (msg == NULL){
 		return SP_LOGGER_INVAlID_ARGUMENT;
 	}
-	int res = fprintf(logger->outputChannel, MSG_ROW_PREFIX, msg, NEW_LINE);
-	if (res < 0){
-		return SP_LOGGER_WRITE_FAIL;
-	}
-	res = fprintf(logger->outputChannel, NEW_LINE);
+	int res = loggerPrintRow(MSG_ROW_PREFIX, msg);
 	if (res < 0){
 		return SP_LOGGER_WRITE_FAIL;
 	}
@@ -145,29 +137,58 @@ SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char
 
 // Method for printing in the assignment required format
 int loggerDetailLines(const char* header, const char* msg, const char* file, const char* function, const int line){
-	int res = fprintf(logger->outputChannel, header, NEW_LINE);
+	int res = loggerPrintText(header);
 	if (res < 0){
 		return 0;
 	}
-	res = fprintf(logger->outputChannel, FILE_ROW_PREFIX, file, NEW_LINE);
+	res = loggerPrintRow(FILE_ROW_PREFIX, file);
 	if (res < 0){
 		return 0;
 	}
-	res = fprintf(logger->outputChannel, FUNCTION_ROW_PREFIX, function, NEW_LINE);
+	res = loggerPrintRow(FUNCTION_ROW_PREFIX, function);
 	if (res < 0){
 		return 0;
 	}
-	res = fprintf(logger->outputChannel, LINE_ROW_PREFIX, line, NEW_LINE);
+	res = loggerPrintLine(LINE_ROW_PREFIX, line);
 	if (res < 0){
 		return 0;
 	}
-	res = fprintf(logger->outputChannel, MSG_ROW_PREFIX, msg, NEW_LINE);
-	if (res < 0){
-		return 0;
-	}
-	res = fprintf(logger->outputChannel, NEW_LINE);
+	res = loggerPrintRow(MSG_ROW_PREFIX, msg);
 	if (res < 0){
 		return 0;
 	}
 	return 1;
+}
+
+// fprintf or fprint text (mostly headers)
+int loggerPrintText(const char* text){
+	int res;
+	if (logger->isStdOut){
+		res = printf("%s%s", text, NEW_LINE);
+	} else {
+		res = fprintf(logger->outputChannel, "%s%s", text, NEW_LINE);
+	}
+	return res;
+}
+
+// fprintf or fprint row with prefix and info
+int loggerPrintRow(const char* prefix, const char* info){
+	int res;
+	if (logger->isStdOut){
+		res = printf("%s%s%s", prefix, info, NEW_LINE);
+	} else {
+		res = fprintf(logger->outputChannel, "%s%s%s", prefix, info, NEW_LINE);
+	}
+	return res;
+}
+
+// fprintf or fprint line prefix and line number
+int loggerPrintLine(const char* prefix, const int line){
+	int res;
+	if (logger->isStdOut){
+		res = printf("%s%d%s", prefix, line, NEW_LINE);
+	} else {
+		res = fprintf(logger->outputChannel, "%s%d%s", prefix, line, NEW_LINE);
+	}
+	return res;
 }
