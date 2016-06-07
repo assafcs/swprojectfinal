@@ -38,7 +38,7 @@ bool pointBasicL2Distance() {
 }
 
 bool pointGettersTest() {
-	double data1[2] = { 1.0, 1.0, 2.0 };
+	double data1[3] = { 1.0, 1.0, 2.0 };
 	int dim1 = 3;
 	int index1 = 1;
 	SPPoint p = spPointCreate((double *)data1, dim1, index1);
@@ -53,12 +53,12 @@ bool pointGettersTest() {
 }
 
 bool pointDestroyTest() {
-	double data1[2] = { 1.0, 1.0, 2.0 };
+	double data1[3] = { 1.0, 1.0, 2.0 };
 	int dim1 = 3;
 	int index1 = 1;
 	SPPoint p = spPointCreate((double *)data1, dim1, index1);
 	spPointDestroy(p);
-	ASSERT_TRUE(p == NULL);
+	spPointDestroy(NULL);
 	return true;
 }
 
