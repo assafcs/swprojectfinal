@@ -14,10 +14,14 @@
 #define FUNCTION_ROW_PREFIX "- function: "
 #define LINE_ROW_PREFIX "- line: "
 #define MSG_ROW_PREFIX "- message: "
-#define NEW_LINE "/n"
+#define NEW_LINE "\n"
 
 SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char* file,
 		const char* function, const int line);
+int loggerDetailLines(const char* header, const char* msg, const char* file, const char* function, const int line);
+int loggerPrintRow(const char* prefix, const char* info);
+int loggerPrintText(const char* text);
+int loggerPrintLine(const char* prefix, const int line);
 
 // Global variable holding the logger
 SPLogger logger = NULL;
@@ -136,7 +140,7 @@ SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char
 
 
 // Method for printing in the assignment required format
-int loggerDetailLines(const char* header, const char* msg, const char* file, const char* function, const int line){
+int loggerDetailLines(const char* header, const char* msg, const char* file, const char* function, const int line) {
 	int res = loggerPrintText(header);
 	if (res < 0){
 		return 0;
@@ -161,7 +165,7 @@ int loggerDetailLines(const char* header, const char* msg, const char* file, con
 }
 
 // fprintf or fprint text (mostly headers)
-int loggerPrintText(const char* text){
+int loggerPrintText(const char* text) {
 	int res;
 	if (logger->isStdOut){
 		res = printf("%s%s", text, NEW_LINE);
@@ -172,7 +176,7 @@ int loggerPrintText(const char* text){
 }
 
 // fprintf or fprint row with prefix and info
-int loggerPrintRow(const char* prefix, const char* info){
+int loggerPrintRow(const char* prefix, const char* info) {
 	int res;
 	if (logger->isStdOut){
 		res = printf("%s%s%s", prefix, info, NEW_LINE);
@@ -183,7 +187,7 @@ int loggerPrintRow(const char* prefix, const char* info){
 }
 
 // fprintf or fprint line prefix and line number
-int loggerPrintLine(const char* prefix, const int line){
+int loggerPrintLine(const char* prefix, const int line) {
 	int res;
 	if (logger->isStdOut){
 		res = printf("%s%d%s", prefix, line, NEW_LINE);
