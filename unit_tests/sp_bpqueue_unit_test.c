@@ -21,8 +21,6 @@ static bool peekAndDequeueEquals(SPBPQueue queue1, SPBPQueue queue2, int index, 
 static bool peekEquals(SPBPQueue queue, SPListElement element);
 static bool peekLastEquals(SPBPQueue queue, SPListElement element);
 
-//static SPListElement peekAndDequeue(SPBPQueue queue);
-
 static bool testQueueCreate() {
 
 	ASSERT_NULL(spBPQueueCreate(0));
