@@ -7,6 +7,8 @@ extern "C" {
 
 #include <stdio.h>
 
+#define ASSERT(condition) ASSERT_TRUE(condition)
+
 #define ASSERT_SAME(first, second) ASSERT_TRUE(first == second)
 
 #define ASSERT_NOT_SAME(first, second) ASSERT_TRUE(first != second)

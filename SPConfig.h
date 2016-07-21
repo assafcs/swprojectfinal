@@ -36,7 +36,15 @@ typedef struct sp_key_to_value {
 	char *value;
 } KeyToValue;
 
-SP_CONFIG_MSG nextParameter(FILE *stream, KeyToValue *outputParameter);
+typedef enum sp_parameter_read_msg_t {
+	SP_PARAMETER_READ_INVALID_FORMAT,
+	SP_PARAMETER_READ_ALLOCATION_FAILED,
+	SP_PARAMETER_READ_EMPTY_LINE,
+	SP_PARAMETER_READ_COMMENT_LINE,
+	SP_PARAMETER_READ_SUCCESS
+} SP_PARAMETER_READ_MSG;
+
+KeyToValue *nextParameter(FILE *stream, SP_PARAMETER_READ_MSG *msg, bool* reachedEnd);
 
 /**
  * Creates a new system configuration struct. The configuration struct
@@ -62,7 +70,7 @@ SP_CONFIG_MSG nextParameter(FILE *stream, KeyToValue *outputParameter);
  *
  *
  */
-//SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg);
+SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg);
 
 /*
  * Returns true if spExtractionMode = true, false otherwise.

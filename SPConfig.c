@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
 
 //typedef struct sp_key_to_value {
 //	char *key;
@@ -35,32 +36,51 @@ struct sp_config_t {
 	bool extractionMode;
 };
 
-//SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
-//	FILE *configFile = open(filename, "r");
-//
-//}
+SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
+	FILE *configFile;
+	//KeyToValue currentParameter;
+	//SP_CONFIG_MSG parameterReadMsg;
+	if (filename == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return NULL;
+	}
+	configFile = fopen(filename, "r");
+	if (configFile == NULL) {
+		*msg = SP_CONFIG_CANNOT_OPEN_FILE;
+		return NULL;
+	}
 
-SP_CONFIG_MSG nextParameter(FILE *stream, KeyToValue *outputParameter) {
+//	while (1) {
+//
+//	}
+	return NULL;
+}
+
+KeyToValue *nextParameter(FILE *stream, SP_PARAMETER_READ_MSG *msg, bool* reachedEnd) {
+	KeyToValue *readParameter = NULL;
 	char ch;
 	int keyCapacity = 16, valueCapacity = 16;
 	int *currentCapacity = &keyCapacity;
 	int keySize = 0, valueSize = 0;
 	int *currentSize = &keySize;
+	bool invalid = false, lineBreak = false, commentLine = false;
+	char *key, *value, *outputKey, *outputValue;
+	char **current;
 
-	char *key = (char *) malloc(sizeof(char) * keyCapacity);
+	key = (char *) malloc(sizeof(char) * keyCapacity);
 	if (key == NULL) {
-		return SP_CONFIG_ALLOC_FAIL;
+		*msg = SP_PARAMETER_READ_ALLOCATION_FAILED;
+		return NULL;
 	}
 
-	char *value = (char *) malloc(sizeof(char) * valueCapacity);
+	value = (char *) malloc(sizeof(char) * valueCapacity);
 	if (key == NULL) {
 		free(key);
-		return SP_CONFIG_ALLOC_FAIL;
+		*msg = SP_PARAMETER_READ_ALLOCATION_FAILED;
+		return NULL;
 	}
 
-	char **current = &key;
-
-	bool invalid = false;
+	current = &key;
 
 	while ((ch = getc(stream)) != EOF) {
 		if (ch == '\n') {
@@ -69,10 +89,11 @@ SP_CONFIG_MSG nextParameter(FILE *stream, KeyToValue *outputParameter) {
 				current = NULL;
 				currentSize = currentCapacity = NULL;
 			}
+			lineBreak = true;
 			break;
 		}
 
-		if (invalid) {
+		if (invalid || commentLine) {
 			// Wait for new line
 			continue;
 		}
@@ -104,26 +125,59 @@ SP_CONFIG_MSG nextParameter(FILE *stream, KeyToValue *outputParameter) {
 			if (current == NULL) {
 				invalid = true;
 				continue;
+			} else if (ch == '#' && current == &key && keySize == 0) {
+				commentLine = true;
+				continue;
 			}
 			addCharacterToWord(ch, current, currentSize, currentCapacity);
 		}
 	}
 
-
-	if (current == NULL && keySize > 0 && valueSize > 0) {
-		// Success reading key and value
-		outputParameter->key = key;
-		outputParameter->value = value;
-	} else {
-		invalid = true;
+	if (!lineBreak) {
+		// In case the loop exited because of EOF - complete the value if needed
+		if (current == &value && valueSize > 0) {
+			addCharacterToWord('\0', current, currentSize, currentCapacity);
+			current = NULL;
+			currentSize = currentCapacity = NULL;
+		}
+		// Informs the the stream reached EOF
+		*reachedEnd = true;
 	}
 
-	if (invalid) {
-		free(key);
-		free(value);
-		return SP_CONFIG_INVALID_ARGUMENT;
+	*msg = SP_PARAMETER_READ_INVALID_FORMAT;
+
+	if (!invalid) {
+		if (commentLine) {
+			*msg = SP_PARAMETER_READ_COMMENT_LINE;
+		} else if (keySize == 0 && valueSize == 0) {
+			*msg = SP_PARAMETER_READ_EMPTY_LINE;
+		} else if (current == NULL && keySize > 0 && valueSize > 0) {
+			// Success reading key and value
+			outputKey = (char *) malloc(keySize * sizeof(char));
+			outputValue = (char *) malloc(valueSize * sizeof(char));
+			readParameter = (KeyToValue *) malloc(sizeof(KeyToValue));
+			if (outputKey == NULL || outputValue == NULL || readParameter == NULL) {
+				free(outputKey);
+				free(outputValue);
+				free(readParameter);
+				readParameter = NULL;
+				*msg = SP_PARAMETER_READ_ALLOCATION_FAILED;
+			} else {
+				strcpy(outputKey, key);
+				strcpy(outputValue, value);
+
+				readParameter->key = outputKey;
+				readParameter->value = outputValue;
+
+				*msg = SP_PARAMETER_READ_SUCCESS;
+			}
+		}
 	}
-	return SP_CONFIG_SUCCESS;
+
+	free(key);
+	free(value);
+
+	return readParameter;
 }
 
 void addCharacterToWord(char c, char** word, int* wordSize, int* wordCapacity) {
