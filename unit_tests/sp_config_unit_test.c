@@ -27,6 +27,11 @@ static bool spConfigMissingFileTest() {
 	return true;
 }
 
+static bool spConfigMissingConfigFileTest() {
+	ASSERT(configCreateError("/Users/mataneilat/Documents/workspace/swprojectfinal/test_config_missing.txt", SP_CONFIG_MISSING_SUFFIX));
+	return true;
+}
+
 static bool spConfigProperConfigFileTest() {
 
 	SP_CONFIG_MSG resultMsg;
@@ -109,4 +114,5 @@ int main() {
 	RUN_TEST(spConfigNullFilenameTest);
 	RUN_TEST(spConfigMissingFileTest);
 	RUN_TEST(spConfigProperConfigFileTest);
+	RUN_TEST(spConfigMissingConfigFileTest);
 }

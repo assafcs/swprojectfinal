@@ -30,6 +30,7 @@ int intValue(const char *parameterAsString, bool* success);
 SP_PARAMETER_PARSE_MSG parseParameter(SPConfig config, char *key, char *value,
 		char *requiredFieldsBitMask, bool* usedValueAsString);
 int setupConfigWithDefaultValues(SPConfig config);
+SPConfig initConfig();
 void addCharacterToWord(char c, char** word, int* wordSize, int* wordCapacity);
 char *defaultStringValue(const char *val);
 
@@ -65,7 +66,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 	SP_PARAMETER_PARSE_MSG parameterParseMsg;
 	bool isDone = false, usedValueAsString = false;
 	char requiredFieldsBitMask = 0x00;
-	SPConfig config;
+	SPConfig config, returnValue;
 
 	if (filename == NULL) {
 		*msg = SP_CONFIG_INVALID_ARGUMENT;
@@ -76,7 +77,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 		*msg = SP_CONFIG_CANNOT_OPEN_FILE;
 		return NULL;
 	}
-	config = (SPConfig) malloc(sizeof(*config));
+	config = initConfig();
 	if (config == NULL) {
 		fclose(configFileStream);
 		*msg = SP_CONFIG_ALLOC_FAIL;
@@ -85,25 +86,24 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 
 	if (setupConfigWithDefaultValues(config) == 1) {
 		fclose(configFileStream);
-		free(config);
+		spConfigDestroy(config);
 		*msg = SP_CONFIG_ALLOC_FAIL;
 		return NULL;
 	}
 
+	returnValue = config;
 	*msg = SP_CONFIG_SUCCESS;
 
 	while (!isDone) {
 		currentParameter = nextParameter(configFileStream, &parameterReadMsg, &isDone);
 		switch (parameterReadMsg) {
 		case SP_PARAMETER_READ_ALLOCATION_FAILED:
-			free(config);
-			config = NULL;
+			returnValue = NULL;
 			*msg = SP_CONFIG_ALLOC_FAIL;
 			isDone = true;
 			break;
 		case SP_PARAMETER_READ_INVALID_FORMAT:
-			free(config);
-			config = NULL;
+			returnValue = NULL;
 			*msg = SP_CONFIG_INVALID_STRING;
 			isDone = true;
 			break;
@@ -112,8 +112,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 					&requiredFieldsBitMask, &usedValueAsString);
 			switch (parameterParseMsg) {
 			case SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT:
-				free(config);
-				config = NULL;
+				returnValue = NULL;
 				*msg = SP_CONFIG_INVALID_INTEGER;
 				isDone = true;
 				break;
@@ -134,7 +133,38 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 		}
 	}
 
+	if ((requiredFieldsBitMask & IMAGES_DIRECTORY_BIT_MASK) == 0x00) {
+		*msg = SP_CONFIG_MISSING_DIR;
+		returnValue = NULL;
+	} else if ((requiredFieldsBitMask & IMAGES_PREFIX_BIT_MASK) == 0x00) {
+		*msg = SP_CONFIG_MISSING_PREFIX;
+		returnValue = NULL;
+	} else if ((requiredFieldsBitMask & IMAGES_SUFFIX_BIT_MASK) == 0x00) {
+		*msg = SP_CONFIG_MISSING_SUFFIX;
+		returnValue = NULL;
+	} else if ((requiredFieldsBitMask & NUM_IMAGES_BIT_MASK) == 0x00) {
+		*msg = SP_CONFIG_MISSING_NUM_IMAGES;
+		returnValue = NULL;
+	}
+
+	if (returnValue == NULL) {
+		spConfigDestroy(config);
+	}
+
 	fclose(configFileStream);
+	return returnValue;
+}
+
+SPConfig initConfig() {
+	SPConfig config = (SPConfig) malloc(sizeof(*config));
+	if (config == NULL) {
+		return NULL;
+	}
+	config->imagesDirectory = NULL;
+	config->imagesPrefix = NULL;
+	config->imagesSuffix = NULL;
+	config->PCAFilename = NULL;
+	config->loggerFilename = NULL;
 	return config;
 }
 
