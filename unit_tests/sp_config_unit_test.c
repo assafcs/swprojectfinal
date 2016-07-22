@@ -27,6 +27,27 @@ static bool spConfigMissingFileTest() {
 	return true;
 }
 
+static bool spConfigProperConfigFileTest() {
+
+	SP_CONFIG_MSG resultMsg;
+	SPConfig config = spConfigCreate("/Users/mataneilat/Documents/workspace/swprojectfinal/test_config_1.txt", &resultMsg);
+
+	ASSERT_NOT_NULL(config);
+	ASSERT_SAME(resultMsg, SP_CONFIG_SUCCESS);
+
+	char *imagesDirectory = spConfigImagesDirectory(config, &resultMsg);
+	ASSERT_NOT_NULL(imagesDirectory);
+	ASSERT_SAME(strcmp(imagesDirectory, "/tmp/testDirectory"), 0);
+
+	char *imagesPrefix = spConfigImagesPrefix(config, &resultMsg);
+	ASSERT_NOT_NULL(imagesPrefix);
+	ASSERT_SAME(strcmp(imagesPrefix, "sp"), 0);
+
+	spConfigDestroy(config);
+	return true;
+
+}
+
 static bool spConfigTest() {
 	FILE *f = fopen("/Users/mataneilat/Documents/workspace/swprojectfinal/test_config.txt", "r");
 
@@ -87,5 +108,5 @@ int main() {
 	RUN_TEST(spConfigTest);
 	RUN_TEST(spConfigNullFilenameTest);
 	RUN_TEST(spConfigMissingFileTest);
-
+	RUN_TEST(spConfigProperConfigFileTest);
 }

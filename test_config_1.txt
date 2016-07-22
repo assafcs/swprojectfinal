@@ -1,0 +1,2 @@
+spImagesDirectory = /tmp/testDirectory
+   spImagesPrefix=sp

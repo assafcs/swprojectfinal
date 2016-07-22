@@ -17,13 +17,35 @@
 //	char *value;
 //} KeyToValue;
 
+typedef enum sp_parameter_parse_msg_t {
+	SP_PARAMETER_PARSE_INVALID_KEY,
+	SP_PARAMETER_PARSE_INVALID_ENUM_VALUE,
+	SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT,
+	SP_PARAMETER_PARSE_INVALID_BOOL_FORMAT,
+	SP_PARAMETER_PARSE_SUCCESS
+} SP_PARAMETER_PARSE_MSG;
+
+
+int intValue(const char *parameterAsString, bool* success);
+SP_PARAMETER_PARSE_MSG parseParameter(SPConfig config, char *key, char *value,
+		char *requiredFieldsBitMask, bool* usedValueAsString);
+int setupConfigWithDefaultValues(SPConfig config);
 void addCharacterToWord(char c, char** word, int* wordSize, int* wordCapacity);
+char *defaultStringValue(const char *val);
+
+static const char IMAGES_DIRECTORY_BIT_MASK = 0x01;
+static const char IMAGES_PREFIX_BIT_MASK = 0x02;
+static const char IMAGES_SUFFIX_BIT_MASK = 0x04;
+static const char NUM_IMAGES_BIT_MASK = 0x08;
 
 struct sp_config_t {
+	// Required Fields
 	char *imagesDirectory;
 	char *imagesPrefix;
 	char *imagesSuffix;
 	int numOfImages;
+
+	// Optional Fields - Have default values
 	int PCADimension;
 	char *PCAFilename;
 	int numOfFeatures;
@@ -37,23 +59,178 @@ struct sp_config_t {
 };
 
 SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
-	FILE *configFile;
-	//KeyToValue currentParameter;
-	//SP_CONFIG_MSG parameterReadMsg;
+	FILE *configFileStream;
+	KeyToValue *currentParameter;
+	SP_PARAMETER_READ_MSG parameterReadMsg;
+	SP_PARAMETER_PARSE_MSG parameterParseMsg;
+	bool isDone = false, usedValueAsString = false;
+	char requiredFieldsBitMask = 0x00;
+	SPConfig config;
+
 	if (filename == NULL) {
 		*msg = SP_CONFIG_INVALID_ARGUMENT;
 		return NULL;
 	}
-	configFile = fopen(filename, "r");
-	if (configFile == NULL) {
+	configFileStream = fopen(filename, "r");
+	if (configFileStream == NULL) {
 		*msg = SP_CONFIG_CANNOT_OPEN_FILE;
 		return NULL;
 	}
+	config = (SPConfig) malloc(sizeof(*config));
+	if (config == NULL) {
+		fclose(configFileStream);
+		*msg = SP_CONFIG_ALLOC_FAIL;
+		return NULL;
+	}
 
-//	while (1) {
-//
-//	}
-	return NULL;
+	if (setupConfigWithDefaultValues(config) == 1) {
+		fclose(configFileStream);
+		free(config);
+		*msg = SP_CONFIG_ALLOC_FAIL;
+		return NULL;
+	}
+
+	*msg = SP_CONFIG_SUCCESS;
+
+	while (!isDone) {
+		currentParameter = nextParameter(configFileStream, &parameterReadMsg, &isDone);
+		switch (parameterReadMsg) {
+		case SP_PARAMETER_READ_ALLOCATION_FAILED:
+			free(config);
+			config = NULL;
+			*msg = SP_CONFIG_ALLOC_FAIL;
+			isDone = true;
+			break;
+		case SP_PARAMETER_READ_INVALID_FORMAT:
+			free(config);
+			config = NULL;
+			*msg = SP_CONFIG_INVALID_STRING;
+			isDone = true;
+			break;
+		case SP_PARAMETER_READ_SUCCESS:
+			parameterParseMsg = parseParameter(config, currentParameter->key, currentParameter->value,
+					&requiredFieldsBitMask, &usedValueAsString);
+			switch (parameterParseMsg) {
+			case SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT:
+				free(config);
+				config = NULL;
+				*msg = SP_CONFIG_INVALID_INTEGER;
+				isDone = true;
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+
+		if (currentParameter != NULL) {
+			free(currentParameter->key);
+			if (!usedValueAsString) {
+				free(currentParameter->value);
+			}
+			free(currentParameter);
+		}
+	}
+
+	fclose(configFileStream);
+	return config;
+}
+
+// Return 1 if allocation error occurred.
+int setupConfigWithDefaultValues(SPConfig config) {
+	char *PCAFilename = defaultStringValue("pca.yml");
+	char *loggerFilename = defaultStringValue("stdout");
+
+	if (PCAFilename == NULL || loggerFilename == NULL) {
+		return 1;
+	}
+
+	config->PCADimension = 20;
+	config->PCAFilename = PCAFilename;
+	config->numOfFeatures = 100;
+	config->extractionMode = true;
+	config->minimalGUI = false;
+	config->numOfSimilarImages = 1;
+	config->KNN = 1;
+	config->splitMethod = TREE_SPLIT_METHOD_MAX_SPREAD;
+	config->loggerLevel = 3;
+	config->loggerFilename = loggerFilename;
+	return 0;
+}
+
+char *defaultStringValue(const char *val) {
+	char *defaultValue =  (char *) malloc(sizeof(char) * (strlen(val) + 1));
+	if (defaultValue == NULL) {
+		return NULL;
+	}
+	strcpy(defaultValue, val);
+	return defaultValue;
+}
+
+SP_PARAMETER_PARSE_MSG parseParameter(SPConfig config, char *key, char *value,
+		char *requiredFieldsBitMask, bool* usedValueAsString) {
+	bool conversionSucceeded = false;
+	int parsedInt;
+	//bool parsedBool;
+
+	*usedValueAsString = false;
+	if (strcmp(key, "spImagesDirectory") == 0) {
+		*requiredFieldsBitMask |= IMAGES_DIRECTORY_BIT_MASK;
+		config->imagesDirectory = value;
+		*usedValueAsString = true;
+		return SP_PARAMETER_PARSE_SUCCESS;
+	} else if (strcmp(key, "spImagesPrefix") == 0) {
+		*requiredFieldsBitMask |= IMAGES_PREFIX_BIT_MASK;
+		config->imagesPrefix = value;
+		*usedValueAsString = true;
+		return SP_PARAMETER_PARSE_SUCCESS;
+	} else if (strcmp(key, "spImagesSuffix") == 0) {
+		*requiredFieldsBitMask |= IMAGES_SUFFIX_BIT_MASK;
+		config->imagesSuffix = value;
+		*usedValueAsString = true;
+		return SP_PARAMETER_PARSE_SUCCESS;
+	} else if (strcmp(key, "spNumOfImages") == 0) {
+		*requiredFieldsBitMask |= NUM_IMAGES_BIT_MASK;
+		parsedInt = intValue(value, &conversionSucceeded);
+		if (conversionSucceeded && parsedInt >= 0) {
+			config->numOfImages = parsedInt;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT;
+		}
+	} else if (strcmp(key, "spPCADimension") == 0) {
+		parsedInt = intValue(value, &conversionSucceeded);
+		if (conversionSucceeded && parsedInt >= 10 && parsedInt <= 28) {
+			config->PCADimension = parsedInt;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT;
+		}
+	} else if (strcmp(key, "spPCAFilename") == 0) {
+		config->PCAFilename = value;
+		*usedValueAsString = true;
+	} else if (strcmp(key, "spNumOfFeatures") == 0) {
+		parsedInt = intValue(value, &conversionSucceeded);
+		if (conversionSucceeded && parsedInt >= 0) {
+			config->numOfFeatures = parsedInt;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT;
+		}
+	}
+
+	return SP_PARAMETER_PARSE_SUCCESS;
+	// TODO: FINISH ALL PARAMETERS PARSE
+}
+
+int intValue(const char *parameterAsString, bool* success) {
+	int val;
+	if (strcmp(parameterAsString, "0") == 0) {
+		*success = true;
+		return 0;
+	}
+	val = atoi(parameterAsString);
+	*success = (val != 0);
+	return val;
 }
 
 KeyToValue *nextParameter(FILE *stream, SP_PARAMETER_READ_MSG *msg, bool* reachedEnd) {
@@ -187,5 +364,37 @@ void addCharacterToWord(char c, char** word, int* wordSize, int* wordCapacity) {
 	}
 	(*word)[*wordSize] = c;
 	(*wordSize)++;
+}
+
+void spConfigDestroy(SPConfig config) {
+	if (config == NULL) {
+		return;
+	}
+	free(config->imagesDirectory);
+	free(config->imagesPrefix);
+	free(config->imagesSuffix);
+	free(config->PCAFilename);
+	free(config->loggerFilename);
+	free(config);
+}
+
+/*** Access Methods ***/
+
+char *spConfigImagesDirectory(const SPConfig config, SP_CONFIG_MSG *msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return NULL;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->imagesDirectory;
+}
+
+char *spConfigImagesPrefix(const SPConfig config, SP_CONFIG_MSG *msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return NULL;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->imagesPrefix;
 }
 

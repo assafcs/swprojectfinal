@@ -10,7 +10,7 @@
  */
 
 typedef enum sp_tree_split_method_t {
-	RANDOM, MAX_SPREAD, INCREMENTAL
+	TREE_SPLIT_METHOD_RANDOM, TREE_SPLIT_METHOD_MAX_SPREAD, TREE_SPLIT_METHOD_INCREMENTAL
 } SP_TREE_SPLIT_METHOD;
 
 typedef enum sp_config_msg_t {
@@ -71,6 +71,10 @@ KeyToValue *nextParameter(FILE *stream, SP_PARAMETER_READ_MSG *msg, bool* reache
  *
  */
 SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg);
+
+char *spConfigImagesDirectory(const SPConfig config, SP_CONFIG_MSG *msg);
+
+char *spConfigImagesPrefix(const SPConfig config, SP_CONFIG_MSG *msg);
 
 /*
  * Returns true if spExtractionMode = true, false otherwise.
@@ -189,6 +193,6 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg);
  * Frees all memory resources associate with config. 
  * If config == NULL nothig is done.
  */
-//void spConfigDestroy(SPConfig config);
+void spConfigDestroy(SPConfig config);
 
 #endif /* SPCONFIG_H_ */
