@@ -31,7 +31,6 @@ typedef struct split_index_mapping {
 	int index;
 } SplitIndexMapping;
 
-int spKDArrayGetPointsDimension(SPKDArray kdArray);
 SPPoint *copyPointsArray(SPPoint *pointsArray, int size);
 int **createIndicesMatrix(SPPoint *pointsArray, int size, int pointsDimenstion);
 void freeIndicesMatrix(int **indicesMatrix, int rows);
@@ -243,6 +242,74 @@ SPKDArraySplitResult spKDArraySplit(SPKDArray kdArr, int coor) {
 	free(indexMapping);
 
 	return splitResult;
+}
+
+double spKDArrayGetSpread(SPKDArray kdArr, int coor) {
+	int pointsDim, arrSize;
+	int **indicesMatrix;
+	int *sortedIndices = NULL;
+	SPPoint minimalPoint, maximalPoint;
+	if (kdArr == NULL) {
+		return -1;
+	}
+	pointsDim = spKDArrayGetPointsDimension(kdArr);
+	arrSize = kdArr->size;
+	indicesMatrix = kdArr->indicesMatrix;
+	if (arrSize <= 0) {
+		// Empty array..
+		return -1;
+	}
+	if (coor < 0 || coor > pointsDim) {
+		// Invalid argument
+		return -1;
+	}
+	sortedIndices = indicesMatrix[coor];
+	minimalPoint = kdArr->pointsArray[sortedIndices[0]];
+	maximalPoint = kdArr->pointsArray[sortedIndices[arrSize - 1]];
+	return spPointGetAxisCoor(maximalPoint, coor) - spPointGetAxisCoor(minimalPoint, coor);
+}
+
+double spKDArrayGetMedian(SPKDArray kdArr, int coor) {
+	int pointsDim, arrSize;
+	int **indicesMatrix;
+	int *sortedIndices = NULL;
+	SPPoint medianPoint;
+	if (kdArr == NULL) {
+		return -1;
+	}
+	pointsDim = spKDArrayGetPointsDimension(kdArr);
+	arrSize = kdArr->size;
+	indicesMatrix = kdArr->indicesMatrix;
+	if (arrSize <= 0) {
+		// Empty array..
+		return -1;
+	}
+	if (coor < 0 || coor > pointsDim) {
+		// Invalid argument
+		return -1;
+	}
+	sortedIndices = indicesMatrix[coor];
+	medianPoint = kdArr->pointsArray[sortedIndices[(arrSize - 1) / 2]];
+	return spPointGetAxisCoor(medianPoint, coor);
+}
+
+int spKDArrayMaxSpreadDimension(SPKDArray kdArr) {
+	int dim, currentSpread, currentDimension, maxSpreadDimension = -1, maxSpread = -1;
+	if (kdArr == NULL) {
+		return -1;
+	}
+	dim = spKDArrayGetPointsDimension(kdArr);
+	if (dim <= 0) {
+		return -1;
+	}
+	for (currentDimension = 0; currentDimension < dim; currentDimension++) {
+		currentSpread = spKDArrayGetSpread(kdArr, currentDimension);
+		if (currentSpread > maxSpread) {
+			maxSpread = currentSpread;
+			maxSpreadDimension = currentDimension;
+		}
+	}
+	return maxSpreadDimension;
 }
 
 int spKDArrayGetPointsDimension(SPKDArray kdArray) {

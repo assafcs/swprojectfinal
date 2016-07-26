@@ -12,6 +12,7 @@
 #include "unit_test_util.h"
 #include "../SPKDArray.h"
 
+static bool kdArrayDimensionInfo(SPKDArray arr, int coor, double expectedSpread, double expectedMedian);
 static bool pointsArrayEqualNotSame(SPPoint* aPointsArray, SPPoint *bPointsArray, int size);
 static bool pointsEqualNotSame(SPPoint aPoint, SPPoint bPoint);
 static bool kdArrayState(SPKDArray kdArray, SPPoint *expectedPointsArray, int expectedSize, int expectedPointDimension);
@@ -21,6 +22,14 @@ SPPoint twoDPoint(double x, double y) {
 	pointData[0] = x;
 	pointData[1] = y;
 	return spPointCreate(pointData, 2, 0);
+}
+
+SPPoint threeDPoint(double x, double y, double z) {
+	double *pointData = (double *) malloc(3 * sizeof(double));
+	pointData[0] = x;
+	pointData[1] = y;
+	pointData[2] = z;
+	return spPointCreate(pointData, 3, 0);
 }
 
 static bool kdArrayInitTest() {
@@ -71,7 +80,34 @@ static bool kdArraySplitTest() {
 	return true;
 }
 
+static bool kdArrayDimensionInfoTest() {
+	SPPoint *points = (SPPoint *) malloc(5 * sizeof(*points));
+	points[0] = threeDPoint(1, 2, -5.5);
+	points[1] = threeDPoint(123, 70, -4.5);
+	points[2] = threeDPoint(2, 7, 4.5);
+	points[3] = threeDPoint(9, 11, 7.5);
+	points[4] = threeDPoint(3, 4, 133.5);
+
+	SPKDArray kdArray = spKDArrayInit(points, 5);
+	ASSERT(kdArrayState(kdArray, points, 5, 3));
+
+	ASSERT(kdArrayDimensionInfo(kdArray, 0, 122, 3));
+	ASSERT(kdArrayDimensionInfo(kdArray, 1, 68, 7));
+	ASSERT(kdArrayDimensionInfo(kdArray, 2, 139, 4.5));
+
+	ASSERT_SAME(spKDArrayMaxSpreadDimension(kdArray), 2);
+
+	return true;
+}
+
 /*** Helper assertion methods ***/
+
+static bool kdArrayDimensionInfo(SPKDArray arr, int coor, double expectedSpread, double expectedMedian) {
+	ASSERT_NOT_NULL(arr);
+	ASSERT_SAME(spKDArrayGetSpread(arr, coor), expectedSpread);
+	ASSERT_SAME(spKDArrayGetMedian(arr, coor), expectedMedian);
+	return true;
+}
 
 static bool kdArrayState(SPKDArray kdArray, SPPoint *expectedPointsArray, int expectedSize, int expectedPointDimension) {
 	int axis, pointIndex, currentIndex;
@@ -115,7 +151,8 @@ static bool pointsEqualNotSame(SPPoint aPoint, SPPoint bPoint) {
 	return true;
 }
 
-int main3() {
+int main() {
 	RUN_TEST(kdArrayInitTest);
 	RUN_TEST(kdArraySplitTest);
+	RUN_TEST(kdArrayDimensionInfoTest);
 }
