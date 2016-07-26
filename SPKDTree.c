@@ -18,16 +18,17 @@ struct sp_kd_tree_node_t {
 
 /*** Methods declarations ***/
 
-SPKDTreeNode innerBuildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod, int previousSplitDimension);
+SPKDTreeNode buildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod, int previousSplitDimension);
 
-SPKDTreeNode buildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod) {
-	return innerBuildTree(kdArray, splitMethod, -1);
+SPKDTreeNode spKDTreeBuild(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod) {
+	return buildTree(kdArray, splitMethod, -1);
 }
 
-SPKDTreeNode innerBuildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod, int previousSplitDimension) {
-	int arraySize, medianVal, splitDimension, maxDimension;
+SPKDTreeNode buildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod, int previousSplitDimension) {
+	int arraySize, splitDimension, maxDimension;
 	SPKDTreeNode treeNode = NULL;
 	SPKDArraySplitResult splitResult = NULL;
+	SPPoint *data;
 	if (kdArray == NULL) {
 		return NULL;
 	}
@@ -35,13 +36,23 @@ SPKDTreeNode innerBuildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod,
 	if (arraySize == 0) {
 		return NULL;
 	}
+	treeNode = (SPKDTreeNode) malloc(sizeof(*treeNode));
+	if (treeNode == NULL) {
+		return NULL;
+	}
 	if (arraySize == 1) {
-		treeNode = (SPKDTreeNode) malloc (sizeof(*treeNode));
+		data = (SPPoint *) malloc(sizeof(SPPoint));
+		if (data == NULL) {
+			free(treeNode);
+			return NULL;
+		}
+		*data = spPointCopy(spKDArrayGetPointsArray(kdArray)[0]);
+
 		treeNode->dim = -1;
 		treeNode->medianVal = 0;
 		treeNode->leftChild = NULL;
 		treeNode->rightChild = NULL;
-		treeNode->data = spKDArrayGetPointsArray(kdArray);
+		treeNode->data = data;
 		return treeNode;
 	}
 	maxDimension = spKDArrayGetPointsDimension(kdArray);
@@ -56,12 +67,45 @@ SPKDTreeNode innerBuildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod,
 		splitDimension = (previousSplitDimension + 1) % maxDimension;
 		break;
 	}
-	medianVal = spKDArrayGetMedian(kdArray, splitDimension);
 	splitResult = spKDArraySplit(kdArray, splitDimension);
-	treeNode->leftChild = buildTree(spKDArraySplitResultGetLeft(splitResult), splitMethod);
-	treeNode->rightChild = buildTree(spKDArraySplitResultGetRight(splitResult), splitMethod);
+	if (splitResult == NULL) {
+		free(treeNode);
+		return NULL;
+	}
+
+	treeNode->dim = splitDimension;
+	treeNode->medianVal = spKDArrayGetMedian(kdArray, splitDimension);
+	treeNode->leftChild = buildTree(spKDArraySplitResultGetLeft(splitResult), splitMethod, splitDimension);
+	treeNode->rightChild = buildTree(spKDArraySplitResultGetRight(splitResult), splitMethod, splitDimension);
 	treeNode->data = NULL;
 	// The left are right arrays are used, so we do not free them
 	free(splitResult);
 	return treeNode;
 }
+
+
+int spKDTreeNodeGetDimension(SPKDTreeNode treeNode) {
+	if (treeNode == NULL) return -1;
+	return treeNode->dim;
+}
+
+double spKDTreeNodeGetMedianValue(SPKDTreeNode treeNode) {
+	if (treeNode == NULL) return 0;
+	return treeNode->medianVal;
+}
+
+SPKDTreeNode spKDTreeNodeGetLeftChild(SPKDTreeNode treeNode) {
+	if (treeNode == NULL) return NULL;
+	return treeNode->leftChild;
+}
+
+SPKDTreeNode spKDTreeNodeGetRightChild(SPKDTreeNode treeNode) {
+	if (treeNode == NULL) return NULL;
+	return treeNode->rightChild;
+}
+
+SPPoint *spKDTreeNodeGetData(SPKDTreeNode treeNode) {
+	if (treeNode == NULL) return NULL;
+	return treeNode->data;
+}
+

@@ -13,6 +13,16 @@
 
 typedef struct sp_kd_tree_node_t *SPKDTreeNode;
 
-SPKDTreeNode buildTree(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod);
+SPKDTreeNode spKDTreeBuild(SPKDArray kdArray, SP_TREE_SPLIT_METHOD splitMethod);
+
+int spKDTreeNodeGetDimension(SPKDTreeNode treeNode);
+
+double spKDTreeNodeGetMedianValue(SPKDTreeNode treeNode);
+
+SPKDTreeNode spKDTreeNodeGetLeftChild(SPKDTreeNode treeNode);
+
+SPKDTreeNode spKDTreeNodeGetRightChild(SPKDTreeNode treeNode);
+
+SPPoint *spKDTreeNodeGetData(SPKDTreeNode treeNode);
 
 #endif /* SPKDTREE_H_ */

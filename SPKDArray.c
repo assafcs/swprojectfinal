@@ -144,7 +144,7 @@ SPPoint *copyPointsArray(SPPoint *pointsArray, int size) {
 }
 
 SPKDArraySplitResult spKDArraySplit(SPKDArray kdArr, int coor) {
-	if (kdArr == NULL || coor < 0 || coor > spKDArrayGetPointsDimension(kdArr) < coor) {
+	if (kdArr == NULL || coor < 0 || coor > spKDArrayGetPointsDimension(kdArr)) {
 		return NULL;
 	}
 	int i, j, currentIndex, leftPointIndex, rightPointIndex, currentArrIdentifier;
@@ -294,7 +294,8 @@ double spKDArrayGetMedian(SPKDArray kdArr, int coor) {
 }
 
 int spKDArrayMaxSpreadDimension(SPKDArray kdArr) {
-	int dim, currentSpread, currentDimension, maxSpreadDimension = -1, maxSpread = -1;
+	int dim, currentDimension, maxSpreadDimension = -1;
+	double currentSpread, maxSpread = -1;
 	if (kdArr == NULL) {
 		return -1;
 	}
