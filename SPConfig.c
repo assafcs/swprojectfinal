@@ -12,10 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-//typedef struct sp_key_to_value {
-//	char *key;
-//	char *value;
-//} KeyToValue;
+/*** Types Declarations ***/
 
 typedef enum sp_parameter_parse_msg_t {
 	SP_PARAMETER_PARSE_INVALID_KEY,
@@ -24,20 +21,6 @@ typedef enum sp_parameter_parse_msg_t {
 	SP_PARAMETER_PARSE_INVALID_BOOL_FORMAT,
 	SP_PARAMETER_PARSE_SUCCESS
 } SP_PARAMETER_PARSE_MSG;
-
-
-int intValue(const char *parameterAsString, bool* success);
-SP_PARAMETER_PARSE_MSG parseParameter(SPConfig config, char *key, char *value,
-		char *requiredFieldsBitMask, bool* usedValueAsString);
-int setupConfigWithDefaultValues(SPConfig config);
-SPConfig initConfig();
-void addCharacterToWord(char c, char** word, int* wordSize, int* wordCapacity);
-char *defaultStringValue(const char *val);
-
-static const char IMAGES_DIRECTORY_BIT_MASK = 0x01;
-static const char IMAGES_PREFIX_BIT_MASK = 0x02;
-static const char IMAGES_SUFFIX_BIT_MASK = 0x04;
-static const char NUM_IMAGES_BIT_MASK = 0x08;
 
 struct sp_config_t {
 	// Required Fields
@@ -50,14 +33,35 @@ struct sp_config_t {
 	int PCADimension;
 	char *PCAFilename;
 	int numOfFeatures;
+	bool extractionMode;
 	int numOfSimilarImages;
 	SP_TREE_SPLIT_METHOD splitMethod;
 	int KNN;
 	bool minimalGUI;
 	int loggerLevel;
 	char *loggerFilename;
-	bool extractionMode;
 };
+
+
+/*** Method Declarations ***/
+
+int intValue(const char *parameterAsString, bool* success);
+bool boolValue(const char *parameterAsString, bool* success);
+SP_PARAMETER_PARSE_MSG parseParameter(SPConfig config, char *key, char *value,
+		char *requiredFieldsBitMask, bool* usedValueAsString);
+int setupConfigWithDefaultValues(SPConfig config);
+SPConfig initConfig();
+void addCharacterToWord(char c, char** word, int* wordSize, int* wordCapacity);
+char *defaultStringValue(const char *val);
+
+/*** Constants ***/
+
+static const char IMAGES_DIRECTORY_BIT_MASK = 0x01;
+static const char IMAGES_PREFIX_BIT_MASK = 0x02;
+static const char IMAGES_SUFFIX_BIT_MASK = 0x04;
+static const char NUM_IMAGES_BIT_MASK = 0x08;
+
+/*** Methods Implementations ***/
 
 SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 	FILE *configFileStream;
@@ -201,9 +205,8 @@ char *defaultStringValue(const char *val) {
 
 SP_PARAMETER_PARSE_MSG parseParameter(SPConfig config, char *key, char *value,
 		char *requiredFieldsBitMask, bool* usedValueAsString) {
-	bool conversionSucceeded = false;
+	bool parsedBool, conversionSucceeded = false;
 	int parsedInt;
-	//bool parsedBool;
 
 	*usedValueAsString = false;
 	if (strcmp(key, "spImagesDirectory") == 0) {
@@ -246,10 +249,59 @@ SP_PARAMETER_PARSE_MSG parseParameter(SPConfig config, char *key, char *value,
 		} else {
 			return SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT;
 		}
+	} else if (strcmp(key, "spExtractionMode") == 0) {
+		parsedBool = boolValue(value, &conversionSucceeded);
+		if (conversionSucceeded) {
+			config->extractionMode = parsedBool;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_BOOL_FORMAT;
+		}
+	} else if (strcmp(key, "spNumOfSimilarImages") == 0) {
+		parsedInt = intValue(value, &conversionSucceeded);
+		if (conversionSucceeded && parsedInt > 0) {
+			config->numOfSimilarImages = parsedInt;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT;
+		}
+	} else if (strcmp(key, "spKDTreeSplitMethod") == 0) {
+		if (strcmp(value, "MAX_SPREAD") == 0) {
+			config->splitMethod = TREE_SPLIT_METHOD_MAX_SPREAD;
+		} else if (strcmp(value, "RANDOM") == 0) {
+			config->splitMethod = TREE_SPLIT_METHOD_RANDOM;
+		} else if (strcmp(value, "INCREMENTAL") == 0) {
+			config->splitMethod = TREE_SPLIT_METHOD_INCREMENTAL;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_ENUM_VALUE;
+		}
+	} else if (strcmp(key, "spKNN") == 0) {
+		parsedInt = intValue(value, &conversionSucceeded);
+		if (conversionSucceeded && parsedInt > 0) {
+			config->KNN = parsedInt;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT;
+		}
+	} else if (strcmp(key, "spMinimalGUI") == 0) {
+		parsedBool = boolValue(value, &conversionSucceeded);
+		if (conversionSucceeded) {
+			config->minimalGUI = parsedBool;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_BOOL_FORMAT;
+		}
+	} else if (strcmp(key, "spLoggerLevel") == 0) {
+		parsedInt = intValue(value, &conversionSucceeded);
+		if (conversionSucceeded && parsedInt >= 1 && parsedInt <= 4) {
+			config->loggerLevel = parsedInt;
+		} else {
+			return SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT;
+		}
+	} else if (strcmp(key, "spLoggerFilename") == 0) {
+		config->loggerFilename = value;
+		*usedValueAsString = true;
+	} else {
+		return SP_PARAMETER_PARSE_INVALID_KEY;
 	}
 
 	return SP_PARAMETER_PARSE_SUCCESS;
-	// TODO: FINISH ALL PARAMETERS PARSE
 }
 
 int intValue(const char *parameterAsString, bool* success) {
@@ -261,6 +313,19 @@ int intValue(const char *parameterAsString, bool* success) {
 	val = atoi(parameterAsString);
 	*success = (val != 0);
 	return val;
+}
+
+bool boolValue(const char *parameterAsString, bool* success) {
+	if (strcmp(parameterAsString, "true") == 0) {
+		*success = true;
+		return true;
+	} else if (strcmp(parameterAsString, "false") == 0) {
+		*success = true;
+		return false;
+	} else {
+		*success = false;
+		return false;
+	}
 }
 
 KeyToValue *nextParameter(FILE *stream, SP_PARAMETER_READ_MSG *msg, bool* reachedEnd) {
@@ -428,3 +493,67 @@ char *spConfigImagesPrefix(const SPConfig config, SP_CONFIG_MSG *msg) {
 	return config->imagesPrefix;
 }
 
+bool spConfigIsExtractionMode(const SPConfig config, SP_CONFIG_MSG* msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return false;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->extractionMode;
+}
+
+bool spConfigMinimalGui(const SPConfig config, SP_CONFIG_MSG* msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return false;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->minimalGUI;
+}
+
+int spConfigGetNumOfImages(const SPConfig config, SP_CONFIG_MSG* msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return -1;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->numOfImages;
+}
+
+int spConfigGetNumOfFeatures(const SPConfig config, SP_CONFIG_MSG* msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return -1;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->numOfFeatures;
+}
+
+int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG* msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return -1;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->PCADimension;
+}
+
+SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config,
+		int index) {
+	if (imagePath == NULL || config == NULL) {
+		return SP_CONFIG_INVALID_ARGUMENT;
+	}
+	if (index >= config->numOfImages) {
+		return SP_CONFIG_INDEX_OUT_OF_RANGE;
+	}
+	sprintf(imagePath, "%s%s%d%s", config->imagesDirectory, config->imagesPrefix, index, config->imagesSuffix);
+	return SP_CONFIG_SUCCESS;
+}
+
+SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config) {
+	if (pcaPath == NULL || config == NULL) {
+		return SP_CONFIG_INVALID_ARGUMENT;
+	}
+	sprintf(pcaPath, "%s%s", config->imagesDirectory, config->PCAFilename);
+	return SP_CONFIG_SUCCESS;
+}

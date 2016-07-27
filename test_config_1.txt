@@ -1,4 +1,4 @@
-spImagesDirectory = /tmp/testDirectory
+spImagesDirectory = /tmp/testDirectory/
    spImagesPrefix= sp
 spImagesSuffix = .img
 spNumOfImages = 14

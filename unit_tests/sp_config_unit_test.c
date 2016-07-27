@@ -42,7 +42,7 @@ static bool spConfigProperConfigFileTest() {
 
 	char *imagesDirectory = spConfigImagesDirectory(config, &resultMsg);
 	ASSERT_NOT_NULL(imagesDirectory);
-	ASSERT_SAME(strcmp(imagesDirectory, "/tmp/testDirectory"), 0);
+	ASSERT_SAME(strcmp(imagesDirectory, "/tmp/testDirectory/"), 0);
 
 	char *imagesPrefix = spConfigImagesPrefix(config, &resultMsg);
 	ASSERT_NOT_NULL(imagesPrefix);
@@ -76,6 +76,52 @@ static bool spConfigTest() {
 
 	fclose(f);
 	return true;
+}
+
+static bool spConfigPCAPathTest() {
+	SP_CONFIG_MSG resultMsg;
+	SPConfig config = spConfigCreate("/Users/mataneilat/Documents/workspace/swprojectfinal/test_config_1.txt", &resultMsg);
+
+	ASSERT_NOT_NULL(config);
+	ASSERT_SAME(resultMsg, SP_CONFIG_SUCCESS);
+
+	char *pcaPath = (char *) malloc(50 * sizeof(char));
+
+	ASSERT_SAME(spConfigGetPCAPath(NULL, NULL), SP_CONFIG_INVALID_ARGUMENT);
+	ASSERT_SAME(spConfigGetPCAPath(NULL, config), SP_CONFIG_INVALID_ARGUMENT);
+	ASSERT_SAME(spConfigGetPCAPath(pcaPath, NULL), SP_CONFIG_INVALID_ARGUMENT);
+
+	ASSERT_SAME(spConfigGetPCAPath(pcaPath, config), SP_CONFIG_SUCCESS);
+
+	ASSERT_SAME(strcmp("/tmp/testDirectory/pca.yml", pcaPath), 0);
+
+	free(pcaPath);
+	spConfigDestroy(config);
+	return true;
+}
+
+static bool spConfigImagesPathTest() {
+	SP_CONFIG_MSG resultMsg;
+	SPConfig config = spConfigCreate("/Users/mataneilat/Documents/workspace/swprojectfinal/test_config_1.txt", &resultMsg);
+
+	ASSERT_NOT_NULL(config);
+	ASSERT_SAME(resultMsg, SP_CONFIG_SUCCESS);
+
+	char *imagePath = (char *) malloc(50 * sizeof(char));
+	ASSERT_SAME(spConfigGetImagePath(NULL, NULL, 0), SP_CONFIG_INVALID_ARGUMENT);
+	ASSERT_SAME(spConfigGetImagePath(NULL, config, 0), SP_CONFIG_INVALID_ARGUMENT);
+	ASSERT_SAME(spConfigGetImagePath(imagePath, NULL, 0), SP_CONFIG_INVALID_ARGUMENT);
+
+	ASSERT_SAME(spConfigGetImagePath(imagePath, config, 14), SP_CONFIG_INDEX_OUT_OF_RANGE);
+
+	ASSERT_SAME(spConfigGetImagePath(imagePath, config, 3), SP_CONFIG_SUCCESS);
+
+	ASSERT_SAME(strcmp("/tmp/testDirectory/sp3.img", imagePath), 0);
+
+	free(imagePath);
+	spConfigDestroy(config);
+	return true;
+
 }
 
 /*** Help Assert Methods ***/
@@ -115,4 +161,6 @@ int main() {
 	RUN_TEST(spConfigMissingFileTest);
 	RUN_TEST(spConfigProperConfigFileTest);
 	RUN_TEST(spConfigMissingConfigFileTest);
+	RUN_TEST(spConfigPCAPathTest);
+	RUN_TEST(spConfigImagesPathTest);
 }
