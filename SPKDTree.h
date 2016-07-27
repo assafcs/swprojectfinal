@@ -25,4 +25,6 @@ SPKDTreeNode spKDTreeNodeGetRightChild(SPKDTreeNode treeNode);
 
 SPPoint *spKDTreeNodeGetData(SPKDTreeNode treeNode);
 
+void spKDTreeDestroy(SPKDTreeNode treeNode);
+
 #endif /* SPKDTREE_H_ */

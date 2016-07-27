@@ -50,9 +50,9 @@ static bool kdTreeMaxSpreadProperBuildTest() {
 	ASSERT(leafNodeState(spKDTreeNodeGetLeftChild(rightTree), points[4]));
 	ASSERT(leafNodeState(spKDTreeNodeGetRightChild(rightTree), points[3]));
 
-	spDestroyKDArray(kdArray);
-	// TODO: Destroy tree
-	free(treeRoot);
+	freePointsArray(points, 5);
+	spKDArrayDestroy(kdArray);
+	spKDTreeDestroy(treeRoot);
 	return true;
 }
 

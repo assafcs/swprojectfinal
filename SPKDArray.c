@@ -91,12 +91,12 @@ SPKDArray spKDArrayInit(SPPoint *arr, int size) {
 	}
 	int **indicesMatrix = createIndicesMatrix(arr, size, pointsDimension);
 	if (indicesMatrix == NULL) {
-		spDestroyKDArray(kdArray);
+		spKDArrayDestroy(kdArray);
 		return NULL;
 	}
 	SPPoint *arrCopy = copyPointsArray(arr, size);
 	if (arrCopy == NULL) {
-		spDestroyKDArray(kdArray);
+		spKDArrayDestroy(kdArray);
 		return NULL;
 	}
 
@@ -168,7 +168,7 @@ SPKDArraySplitResult spKDArraySplit(SPKDArray kdArr, int coor) {
 
 	if (splitResult->left == NULL || splitResult->right == NULL) {
 		free(indexMapping);
-		spDestroyKDArraySplitResult(splitResult);
+		spKDArraySplitResultDestroy(splitResult);
 		return NULL;
 	}
 
@@ -187,7 +187,7 @@ SPKDArraySplitResult spKDArraySplit(SPKDArray kdArr, int coor) {
 	if (splitResult->left->pointsArray == NULL || splitResult->right->pointsArray == NULL
 			|| splitResult->left->indicesMatrix == NULL || splitResult->right->indicesMatrix == NULL) {
 		free(indexMapping);
-		spDestroyKDArraySplitResult(splitResult);
+		spKDArraySplitResultDestroy(splitResult);
 		return NULL;
 	}
 
@@ -216,7 +216,7 @@ SPKDArraySplitResult spKDArraySplit(SPKDArray kdArr, int coor) {
 
 		if (leftIndices == NULL || rightIndices == NULL) {
 			free(indexMapping);
-			spDestroyKDArraySplitResult(splitResult);
+			spKDArraySplitResultDestroy(splitResult);
 			return NULL;
 		}
 		splitResult->left->indicesMatrix[i] = leftIndices;
@@ -344,7 +344,7 @@ void freePointsArray(SPPoint *pointsArray, int size) {
 	free(pointsArray);
 }
 
-void spDestroyKDArray(SPKDArray kdArray) {
+void spKDArrayDestroy(SPKDArray kdArray) {
 	if (kdArray == NULL) {
 		return;
 	}
@@ -370,12 +370,12 @@ SPKDArray spKDArraySplitResultGetRight(SPKDArraySplitResult splitResult) {
 	return splitResult->right;
 }
 
-void spDestroyKDArraySplitResult(SPKDArraySplitResult splitResult) {
+void spKDArraySplitResultDestroy(SPKDArraySplitResult splitResult) {
 	if (splitResult == NULL) {
 		return;
 	}
-	spDestroyKDArray(splitResult->left);
-	spDestroyKDArray(splitResult->right);
+	spKDArrayDestroy(splitResult->left);
+	spKDArrayDestroy(splitResult->right);
 	free(splitResult);
 }
 

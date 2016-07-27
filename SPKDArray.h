@@ -24,7 +24,7 @@ double spKDArrayGetMedian(SPKDArray kdArr, int coor);
 
 int spKDArrayMaxSpreadDimension(SPKDArray kdArr);
 
-void spDestroyKDArray(SPKDArray kdArray);
+void spKDArrayDestroy(SPKDArray kdArray);
 
 SPPoint *spKDArrayGetPointsArray(SPKDArray kdArray);
 
@@ -44,6 +44,6 @@ SPKDArray spKDArraySplitResultGetLeft(SPKDArraySplitResult splitResult);
 
 SPKDArray spKDArraySplitResultGetRight(SPKDArraySplitResult splitResult);
 
-void spDestroyKDArraySplitResult(SPKDArraySplitResult splitResult);
+void spKDArraySplitResultDestroy(SPKDArraySplitResult splitResult);
 
 #endif /* SPKDARRAY_H_ */

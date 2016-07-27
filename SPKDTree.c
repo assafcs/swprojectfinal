@@ -109,3 +109,13 @@ SPPoint *spKDTreeNodeGetData(SPKDTreeNode treeNode) {
 	return treeNode->data;
 }
 
+void spKDTreeDestroy(SPKDTreeNode treeNode) {
+	if (treeNode == NULL) return;
+	if (treeNode->data != NULL) {
+		spPointDestroy(*(treeNode->data));
+	}
+	spKDTreeDestroy(treeNode->leftChild);
+	spKDTreeDestroy(treeNode->rightChild);
+	free(treeNode);
+}
+

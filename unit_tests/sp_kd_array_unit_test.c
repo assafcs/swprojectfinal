@@ -26,7 +26,7 @@ static bool kdArrayInitTest() {
 	ASSERT(kdArrayState(kdArray, points, 3, 2));
 
 	freePointsArray(points, 3);
-	spDestroyKDArray(kdArray);
+	spKDArrayDestroy(kdArray);
 	return true;
 }
 
@@ -59,8 +59,8 @@ static bool kdArraySplitTest() {
 	free(leftPoints);
 	free(rightPoints);
 
-	spDestroyKDArray(kdArray);
-	spDestroyKDArraySplitResult(splitResult);
+	spKDArrayDestroy(kdArray);
+	spKDArraySplitResultDestroy(splitResult);
 	return true;
 }
 
@@ -81,6 +81,8 @@ static bool kdArrayDimensionInfoTest() {
 
 	ASSERT_SAME(spKDArrayMaxSpreadDimension(kdArray), 2);
 
+	freePointsArray(points, 5);
+	spKDArrayDestroy(kdArray);
 	return true;
 }
 
