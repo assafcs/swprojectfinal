@@ -26,6 +26,9 @@ typedef enum sp_database_creation_msg_t {
 	SP_DATABASE_CREATION_SUCCESS
 } SP_DATABASE_CREATION_MSG;
 
-SPKDTreeNode createImagesSearchTree(SPConfig config, SP_DATABASE_CREATION_MSG *msg);
+SPKDTreeNode createImagesSearchTree(const SPConfig config, SP_DATABASE_CREATION_MSG *msg);
+
+int *findSimilarImagesIndices(const SPConfig config, const char *queryImagePath, const SPKDTreeNode searchTree, int *resultsCount);
+
 
 #endif /* MAIN_AUX_H_ */

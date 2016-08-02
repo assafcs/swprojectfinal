@@ -145,6 +145,10 @@ int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG* msg);
 
 SP_TREE_SPLIT_METHOD spConfigGetSplitMethod(const SPConfig config, SP_CONFIG_MSG* msg);
 
+int spConfigGetKNN(const SPConfig config, SP_CONFIG_MSG* msg);
+
+int spConfigGetNumOfSimilarImages(const SPConfig config, SP_CONFIG_MSG* msg);
+
 /**
  * Given an index 'index' the function stores in imagePath the full path of the
  * ith image.

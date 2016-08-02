@@ -11,6 +11,8 @@
 #include "SPImageProc.h"
 #include "main_aux.h"
 extern "C" {
+#include "SPBPriorityQueue.h"
+#include "sp_algorithms.h"
 #include "SPKDArray.h"
 #include "sp_util.h"
 #include "SPPoint.h"
@@ -19,6 +21,21 @@ extern "C" {
 }
 
 static const int MAX_PATH_LENGTH = 100;
+
+struct HitInfo {
+   int index;
+   int hits;
+};
+
+int cmpHitInfos(const void * a, const void * b) {
+	HitInfo aInfo = *(HitInfo*)a;
+	HitInfo bInfo = *(HitInfo*)b;
+	int res = (bInfo.hits - aInfo.hits);
+	if (res != 0) {
+		return res;
+	}
+	return aInfo.index - bInfo.index;
+}
 
 using namespace sp;
 
@@ -150,15 +167,15 @@ SPPoint *extractAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_
 		return NULL;
 	}
 
-	bool extractionMode = spConfigIsExtractionMode(config, &resultMSG);
-	if (resultMSG != SP_CONFIG_SUCCESS) {
-		*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
-		return NULL;
-	}
-	if (extractionMode) {
+//	bool extractionMode = spConfigIsExtractionMode(config, &resultMSG);
+//	if (resultMSG != SP_CONFIG_SUCCESS) {
+//		*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
+//		return NULL;
+//	}
+	//if (extractionMode) {
 		//return loadImagesDatabase(config, numOfImages, msg);
-		return NULL;
-	}
+//		return NULL;
+	//}
 	ImageProc ip = ImageProc(config);
 
 	allFeatures = (SPPoint *) malloc(1 * sizeof(SPPoint));
@@ -215,7 +232,7 @@ SPPoint *extractAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_
 	return allFeatures;
 }
 
-SPKDTreeNode createImagesSearchTree(SPConfig config, SP_DATABASE_CREATION_MSG *msg) {
+SPKDTreeNode createImagesSearchTree(const SPConfig config, SP_DATABASE_CREATION_MSG *msg) {
 	SPPoint *allFeatures = NULL;
 
 	int totalFeaturesCount;
@@ -247,4 +264,77 @@ SPKDTreeNode createImagesSearchTree(SPConfig config, SP_DATABASE_CREATION_MSG *m
 		return NULL;
 	}
 	return tree;
+}
+
+int *findSimilarImagesIndices(const SPConfig config, const char *queryImagePath, const SPKDTreeNode searchTree, int *resultsCount) {
+	if (config == NULL || searchTree == NULL || resultsCount == NULL) {
+		return NULL;
+	}
+	SP_CONFIG_MSG configMsg;
+	int KNN = spConfigGetKNN(config, &configMsg);
+
+	if (configMsg != SP_CONFIG_SUCCESS) {
+		return NULL;
+	}
+	int numOfImages = spConfigGetNumOfImages(config, &configMsg);
+	if (configMsg != SP_CONFIG_SUCCESS) {
+		return NULL;
+	}
+	int similarImages = spConfigGetNumOfSimilarImages(config, &configMsg);
+	if (configMsg != SP_CONFIG_SUCCESS) {
+		return NULL;
+	}
+
+	HitInfo* hitInfos = (HitInfo*) malloc(numOfImages * sizeof(HitInfo));
+	if (hitInfos == NULL) {
+		return NULL;
+	}
+
+	for (int i = 0; i < numOfImages; i++) {
+		struct HitInfo info = {i, 0};
+		hitInfos[i] = info;
+	}
+
+	int numOfFeaturesExtracted;
+	ImageProc ip = ImageProc(config);
+
+	SPPoint *features = ip.getImageFeatures(queryImagePath, 0, &numOfFeaturesExtracted);
+
+	if (features == NULL || numOfFeaturesExtracted <= 0) {
+		free(hitInfos);
+		return NULL;
+	}
+
+	SPBPQueue queue = spBPQueueCreate(KNN);
+	for (int i = 0; i < numOfFeaturesExtracted; i++) {
+		SPPoint feature = features[i];
+		spKNearestNeighbours(searchTree, queue, feature);
+		for (int j = 0; j < spBPQueueSize(queue); j++) {
+			SPListElement listElement = spBPQueuePeek(queue);
+			int index = spListElementGetIndex(listElement);
+			hitInfos[index].hits++;
+			spBPQueueDequeue(queue);
+			spListElementDestroy(listElement);
+		}
+		spBPQueueClear(queue);
+	}
+	// No need for the queue anymore
+	spBPQueueDestroy(queue);
+
+	qsort(hitInfos, numOfImages, sizeof(HitInfo), cmpHitInfos);
+
+	int* resValue = (int *) malloc(similarImages * sizeof(int));
+
+	if (resValue == NULL) {
+		free(hitInfos);
+		return NULL;
+	}
+
+	for (int i = 0; i < similarImages; i++) {
+		resValue[i] = hitInfos[i].index;
+	}
+
+	free(hitInfos);
+	*resultsCount = similarImages;
+	return resValue;
 }
