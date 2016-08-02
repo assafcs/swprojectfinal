@@ -540,6 +540,15 @@ int spConfigGetPCADim(const SPConfig config, SP_CONFIG_MSG* msg) {
 	return config->PCADimension;
 }
 
+SP_TREE_SPLIT_METHOD spConfigGetSplitMethod(const SPConfig config, SP_CONFIG_MSG* msg) {
+	if (config == NULL) {
+		*msg = SP_CONFIG_INVALID_ARGUMENT;
+		return TREE_SPLIT_METHOD_RANDOM;
+	}
+	*msg = SP_CONFIG_SUCCESS;
+	return config->splitMethod;
+}
+
 SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config,
 		int index) {
 	if (imagePath == NULL || config == NULL) {

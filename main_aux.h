@@ -11,10 +11,12 @@
 extern "C" {
 #include "SPPoint.h"
 #include "SPConfig.h"
+#include "SPKDTree.h"
 }
 
 typedef enum sp_database_creation_msg_t {
 	SP_DATABASE_CREATION_FEATURES_CONFIGUATION_ERROR,
+	SP_DATABASE_CREATION_FEATURES_EXTRACTION_ERROR,
 	SP_DATABASE_CREATION_INVALID_ARGUMENT,
 	SP_DATABASE_CREATION_FEATURE_FILE_MISSING,
 	SP_DATABASE_CREATION_CONFIG_ERROR,
@@ -24,6 +26,6 @@ typedef enum sp_database_creation_msg_t {
 	SP_DATABASE_CREATION_SUCCESS
 } SP_DATABASE_CREATION_MSG;
 
-SPPoint **createImagesDatabase(SPConfig config, SP_DATABASE_CREATION_MSG *msg);
+SPKDTreeNode createImagesSearchTree(SPConfig config, SP_DATABASE_CREATION_MSG *msg);
 
 #endif /* MAIN_AUX_H_ */

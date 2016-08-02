@@ -11,6 +11,7 @@
 #include "SPImageProc.h"
 #include "main_aux.h"
 extern "C" {
+#include "SPKDArray.h"
 #include "sp_util.h"
 #include "SPPoint.h"
 #include "SPLogger.h"
@@ -21,7 +22,7 @@ static const int MAX_PATH_LENGTH = 100;
 
 using namespace sp;
 
-
+//
 //SPPoint *loadImageFeatures(const char *featuresPath, SP_DATABASE_CREATION_MSG *msg) {
 //	featuresPath = NULL;
 //	*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
@@ -125,14 +126,23 @@ SP_DATABASE_CREATION_MSG writeFeatures(char *filePath, SPPoint *features, int nu
 	return SP_DATABASE_CREATION_SUCCESS;
 }
 
-SPPoint **createImagesDatabase(SPConfig config, SP_DATABASE_CREATION_MSG *msg) {
+void destroyVariables(SPPoint *allFeatures, int totalFeaturesCount, char *imagePath, char *featuresPath) {
+	for (int j = 0; j < totalFeaturesCount; j++) {
+		spPointDestroy(allFeatures[j]);
+	}
+	free(allFeatures);
+	free(imagePath);
+	free(featuresPath);
+}
+
+SPPoint *extractAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_CREATION_MSG *msg) {
 	char *imagePath = NULL, *featuresPath = NULL;
-	SPPoint **database = NULL;
+	SPPoint *allFeatures = NULL;
+
 	if (config == NULL) {
 		*msg = SP_DATABASE_CREATION_INVALID_ARGUMENT;
 		return NULL;
 	}
-
 	SP_CONFIG_MSG resultMSG;
 	int numOfImages = spConfigGetNumOfImages(config, &resultMSG);
 	if (resultMSG != SP_CONFIG_SUCCESS) {
@@ -149,62 +159,92 @@ SPPoint **createImagesDatabase(SPConfig config, SP_DATABASE_CREATION_MSG *msg) {
 		//return loadImagesDatabase(config, numOfImages, msg);
 		return NULL;
 	}
-	printf("Got here!\n");
 	ImageProc ip = ImageProc(config);
 
-	database = (SPPoint **) malloc(numOfImages * sizeof(*database));
-	int *numberOfFeaturesPerImage = (int *) malloc (numOfImages * sizeof(int));
+	allFeatures = (SPPoint *) malloc(1 * sizeof(SPPoint));
 	imagePath = (char *) malloc (MAX_PATH_LENGTH * sizeof(char));
 	featuresPath = (char *) malloc (MAX_PATH_LENGTH * sizeof(char));
-	if (database == NULL || imagePath == NULL || featuresPath == NULL) {
-		printf("Freeing 1 \n");
-		free(database);
-		free(imagePath);
-		free(featuresPath);
-		free(numberOfFeaturesPerImage);
+	if (allFeatures == NULL || imagePath == NULL || featuresPath == NULL) {
+		destroyVariables(allFeatures, 0, imagePath, featuresPath);
 		*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
 		return NULL;
 	}
 	int numOfFeaturesExtracted;
+	int totalFeaturesCount = 0;
 	for (int imageIndex = 0; imageIndex < numOfImages; imageIndex++) {
 		if (spConfigGetImagePath(imagePath, config, imageIndex) != SP_CONFIG_SUCCESS ||
 				spConfigGetImageFeaturesPath(featuresPath, config, imageIndex) != SP_CONFIG_SUCCESS) {
-			printf("Freeing 2 \n");
-			for (int j = 0; j < imageIndex; j++) {
-				freePointsArray(database[j], numberOfFeaturesPerImage[j]);
-			}
-			free(database);
-			free(imagePath);
-			free(featuresPath);
-			free(numberOfFeaturesPerImage);
+			destroyVariables(allFeatures, totalFeaturesCount, imagePath, featuresPath);
 			*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
 			return NULL;
 		}
 		SPPoint *features = ip.getImageFeatures(imagePath, imageIndex, &numOfFeaturesExtracted);
+		if (features == NULL || numOfFeaturesExtracted <= 0) {
+			destroyVariables(allFeatures, totalFeaturesCount, imagePath, featuresPath);
+			*msg = SP_DATABASE_CREATION_FEATURES_EXTRACTION_ERROR;
+			return NULL;
+		}
+
+		totalFeaturesCount += numOfFeaturesExtracted;
 		SP_DATABASE_CREATION_MSG creationMSG = writeFeatures(featuresPath, features, numOfFeaturesExtracted);
+
 		if (creationMSG != SP_DATABASE_CREATION_SUCCESS) {
-			printf("Freeing 3 \n");
-			for (int j = 0; j < imageIndex; j++) {
-				freePointsArray(database[j], numberOfFeaturesPerImage[j]);
-			}
-			free(database);
-			free(imagePath);
-			free(featuresPath);
-			free(numberOfFeaturesPerImage);
+			destroyVariables(allFeatures, totalFeaturesCount, imagePath, featuresPath);
+			freePointsArray(features, numOfFeaturesExtracted);
 			*msg = creationMSG;
 			return NULL;
 		}
-		database[imageIndex] = features;
-		numberOfFeaturesPerImage[imageIndex] = numOfFeaturesExtracted;
+
+		allFeatures = (SPPoint *) realloc(allFeatures, totalFeaturesCount * sizeof(SPPoint));
+		if (allFeatures == NULL) {
+			destroyVariables(allFeatures, totalFeaturesCount, imagePath, featuresPath);
+			freePointsArray(features, numOfFeaturesExtracted);
+			*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
+			return NULL;
+		}
+
+		for (int i = 0; i < numOfFeaturesExtracted; i++) {
+			allFeatures[totalFeaturesCount - numOfFeaturesExtracted + i] = features[i];
+		}
 	}
 
-	for (int j = 0; j < numOfImages; j++) {
-		freePointsArray(database[j], numberOfFeaturesPerImage[j]);
-	}
-	free(database);
 	free(imagePath);
 	free(featuresPath);
-	free(numberOfFeaturesPerImage);
+	*numberOfFeatures = totalFeaturesCount;
 	*msg = SP_DATABASE_CREATION_SUCCESS;
-	return database;
+	return allFeatures;
+}
+
+SPKDTreeNode createImagesSearchTree(SPConfig config, SP_DATABASE_CREATION_MSG *msg) {
+	SPPoint *allFeatures = NULL;
+
+	int totalFeaturesCount;
+	allFeatures = extractAllFeatures(config, &totalFeaturesCount, msg);
+	if (allFeatures == NULL || totalFeaturesCount <= 0 || *msg != SP_DATABASE_CREATION_SUCCESS) {
+		free(allFeatures);
+		return NULL;
+	}
+
+	SPKDArray kdArray = spKDArrayInit(allFeatures, totalFeaturesCount);
+	if (kdArray == NULL) {
+		free(allFeatures);
+		*msg = SP_DATABASE_CREATION_FEATURES_EXTRACTION_ERROR;
+		return NULL;
+	}
+	SP_CONFIG_MSG configMsg;
+	SP_TREE_SPLIT_METHOD splitMethod = spConfigGetSplitMethod(config, &configMsg);
+	if (configMsg != SP_CONFIG_SUCCESS) {
+		spKDArrayDestroy(kdArray);
+		free(allFeatures);
+		*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
+		return NULL;
+	}
+	SPKDTreeNode tree = spKDTreeBuild(kdArray, splitMethod);
+	if (tree == NULL) {
+		spKDArrayDestroy(kdArray);
+		free(allFeatures);
+		*msg = SP_DATABASE_CREATION_FEATURES_EXTRACTION_ERROR;
+		return NULL;
+	}
+	return tree;
 }

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "main_aux.h"
 extern "C" {
+#include "SPKDTree.h"
 #include "SPPoint.h"
 #include "SPLogger.h"
 #include "SPConfig.h"
@@ -21,9 +22,9 @@ int main() {
 	SPConfig config = spConfigCreate("spconfig.config", &resultMSG);
 
 	SP_DATABASE_CREATION_MSG msg;
-	SPPoint **database = createImagesDatabase(config, &msg);
+	SPKDTreeNode searchTree = createImagesSearchTree(config, &msg);
 
-	printf("Random Value: %.2f", spPointGetAxisCoor(database[10][65], 18));
+	printf("Random Value: %d", spKDTreeNodeGetDimension(searchTree));
 	return 0;
 }
 
