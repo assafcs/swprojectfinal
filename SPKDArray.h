@@ -36,8 +36,6 @@ int spKDArrayGetPointsDimension(SPKDArray kdArray);
 
 int **spKDArrayGetIndicesMatrix(SPKDArray kdArray);
 
-void freePointsArray(SPPoint *pointsArray, int size);
-
 /*** Split result access methods ***/
 
 SPKDArray spKDArraySplitResultGetLeft(SPKDArraySplitResult splitResult);

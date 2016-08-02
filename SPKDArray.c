@@ -333,17 +333,6 @@ void freeIndicesMatrix(int **indicesMatrix, int rows) {
 	free(indicesMatrix);
 }
 
-void freePointsArray(SPPoint *pointsArray, int size) {
-	int i;
-	if (pointsArray == NULL) {
-		return;
-	}
-	for (i = 0; i < size; i++) {
-		spPointDestroy(pointsArray[i]);
-	}
-	free(pointsArray);
-}
-
 void spKDArrayDestroy(SPKDArray kdArray) {
 	if (kdArray == NULL) {
 		return;

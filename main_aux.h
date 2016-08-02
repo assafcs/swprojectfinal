@@ -1,0 +1,29 @@
+/*
+ * main_aux.h
+ *
+ *  Created on: Jul 27, 2016
+ *      Author: mataneilat
+ */
+
+#ifndef MAIN_AUX_H_
+#define MAIN_AUX_H_
+
+extern "C" {
+#include "SPPoint.h"
+#include "SPConfig.h"
+}
+
+typedef enum sp_database_creation_msg_t {
+	SP_DATABASE_CREATION_FEATURES_CONFIGUATION_ERROR,
+	SP_DATABASE_CREATION_INVALID_ARGUMENT,
+	SP_DATABASE_CREATION_FEATURE_FILE_MISSING,
+	SP_DATABASE_CREATION_CONFIG_ERROR,
+	SP_DATABASE_CREATION_LOAD_FAIL,
+	SP_DATABASE_CREATION_ALLOC_FAIL,
+	SP_DATABASE_CREATION_WRITE_ERROR,
+	SP_DATABASE_CREATION_SUCCESS
+} SP_DATABASE_CREATION_MSG;
+
+SPPoint **createImagesDatabase(SPConfig config, SP_DATABASE_CREATION_MSG *msg);
+
+#endif /* MAIN_AUX_H_ */

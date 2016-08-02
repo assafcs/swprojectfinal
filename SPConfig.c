@@ -56,6 +56,8 @@ char *defaultStringValue(const char *val);
 
 /*** Constants ***/
 
+static const char *FEATURES_PATH_SUFFIX = ".feats";
+
 static const char IMAGES_DIRECTORY_BIT_MASK = 0x01;
 static const char IMAGES_PREFIX_BIT_MASK = 0x02;
 static const char IMAGES_SUFFIX_BIT_MASK = 0x04;
@@ -555,5 +557,16 @@ SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config) {
 		return SP_CONFIG_INVALID_ARGUMENT;
 	}
 	sprintf(pcaPath, "%s%s", config->imagesDirectory, config->PCAFilename);
+	return SP_CONFIG_SUCCESS;
+}
+
+SP_CONFIG_MSG spConfigGetImageFeaturesPath(char *featuresPath, const SPConfig config, int index) {
+	if (featuresPath == NULL || config == NULL) {
+		return SP_CONFIG_INVALID_ARGUMENT;
+	}
+	if (index >= config->numOfImages) {
+		return SP_CONFIG_INDEX_OUT_OF_RANGE;
+	}
+	sprintf(featuresPath, "%s%s%d%s", config->imagesDirectory, config->imagesPrefix, index, FEATURES_PATH_SUFFIX);
 	return SP_CONFIG_SUCCESS;
 }
