@@ -12,14 +12,6 @@
 #include "../sp_util.h"
 #include "unit_test_util.h"
 
-void freeStringsArray(char **strings, int count) {
-	int i;
-	for (i = 0; i < count; i++) {
-		free(strings[i]);
-	}
-	free(strings);
-}
-
 static bool spUtilSplitTest() {
 	char *str = "This is a string";
 	int numberOfStrings = 0;

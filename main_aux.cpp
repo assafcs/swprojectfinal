@@ -22,6 +22,12 @@ extern "C" {
 
 static const int MAX_PATH_LENGTH = 100;
 
+static const int MAX_FEATURE_COORDINATE_STRING_LEN = 20;
+
+static const int MAX_NUM_OF_FEATURES_STRING_LEN = 10;
+
+static const char FEATURE_COORDINATES_DELIM = ' ';
+
 struct HitInfo {
    int index;
    int hits;
@@ -39,40 +45,171 @@ int cmpHitInfos(const void * a, const void * b) {
 
 using namespace sp;
 
-//
-//SPPoint *loadImageFeatures(const char *featuresPath, SP_DATABASE_CREATION_MSG *msg) {
-//	featuresPath = NULL;
-//	*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
-//	return NULL;
-//}
-//
-//SPPoint **loadImagesDatabase(SPConfig config, int numOfImages, SP_DATABASE_CREATION_MSG *msg) {
-//	SP_CONFIG_MSG resultMSG;
-//
-//	SPPoint **database = (SPPoint **) malloc(numOfImages * sizeof(*database));
-//	if (database == NULL) {
-//		*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
-//		return NULL;
-//	}
-//
-//	char *featuresPath = (char *) malloc(MAX_PATH_LENGTH * sizeof(char));
-//	if (featuresPath == NULL) {
-//		free(database);
-//		*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
-//		return NULL;
-//	}
-//
-//	for (int imageIndex = 0; imageIndex < numOfImages; imageIndex++) {
-//
-//		if (spConfigGetImageFeaturesPath(featuresPath, config, imageIndex) != SP_CONFIG_SUCCESS) {
-//			free(featuresPath);
-//			free(database);
-//			*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
-//			return NULL;
-//		}
-//	}
-//
-//}
+void destroyVariables(SPPoint *allFeatures, int totalFeaturesCount, char *imagePath, char *featuresPath) {
+	for (int j = 0; j < totalFeaturesCount; j++) {
+		spPointDestroy(allFeatures[j]);
+	}
+	free(allFeatures);
+	free(imagePath);
+	free(featuresPath);
+}
+
+int loadNumberOfFeatures(FILE *featuresFile, SP_DATABASE_CREATION_MSG *msg) {
+	char *numberOfFeaturesAsString = (char *) malloc((MAX_NUM_OF_FEATURES_STRING_LEN + 1) * sizeof(char));
+	if (numberOfFeaturesAsString == NULL) {
+		*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
+		return -1;
+	}
+	if (fgets(numberOfFeaturesAsString, MAX_NUM_OF_FEATURES_STRING_LEN, featuresFile) == NULL) {
+		free(numberOfFeaturesAsString);
+		*msg = SP_DATABASE_CREATION_LOAD_ERROR;
+		return -1;
+	}
+	int numberOfFeatures = atoi(numberOfFeaturesAsString);
+
+	free(numberOfFeaturesAsString);
+	*msg = (numberOfFeatures == 0) ? SP_DATABASE_CREATION_LOAD_ERROR : SP_DATABASE_CREATION_SUCCESS;
+	return numberOfFeatures;
+}
+
+SPPoint loadFeature(FILE *featuresFile, int expectedDimension, int index, SP_DATABASE_CREATION_MSG *msg) {
+	int maxFeatureStringLen = (MAX_FEATURE_COORDINATE_STRING_LEN + 1) * expectedDimension;
+	char *featureCoordinatesString = (char *) malloc((maxFeatureStringLen + 1) * sizeof(char));
+	if (featureCoordinatesString == NULL) {
+		*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
+		return NULL;
+	}
+	if (fgets(featureCoordinatesString, maxFeatureStringLen, featuresFile) == NULL) {
+		free(featureCoordinatesString);
+		*msg = SP_DATABASE_CREATION_LOAD_ERROR;
+		return NULL;
+	}
+
+	int numberOfCoordinates;
+	char **splitResult = spUtilStrSplit(featureCoordinatesString, FEATURE_COORDINATES_DELIM, &numberOfCoordinates);
+	// The feature coordinates string is no longer needed..
+	free(featureCoordinatesString);
+
+	if (splitResult == NULL || numberOfCoordinates != expectedDimension) {
+		freeStringsArray(splitResult, numberOfCoordinates);
+		*msg = SP_DATABASE_CREATION_LOAD_ERROR;
+		return NULL;
+	}
+
+	double *data = (double *) malloc(numberOfCoordinates * sizeof(double));
+	for (int i = 0; i < numberOfCoordinates; i++) {
+		double featureCoordinate = atof(splitResult[i]);
+		if (featureCoordinate == 0 && strcmp(splitResult[i], "0") != 0) {
+			free(data);
+			freeStringsArray(splitResult, numberOfCoordinates);
+			*msg = SP_DATABASE_CREATION_LOAD_ERROR;
+			return NULL;
+		}
+		data[i] = featureCoordinate;
+	}
+	SPPoint feature = spPointCreate(data, numberOfCoordinates, index);
+	free(data);
+	freeStringsArray(splitResult, numberOfCoordinates);
+	*msg = SP_DATABASE_CREATION_SUCCESS;
+	return feature;
+}
+
+SPPoint *loadFeatures(const char *filePath, int index, int expectedFeatureDimension, int *numOfFeaturesLoaded,
+		SP_DATABASE_CREATION_MSG *msg) {
+	FILE *featuresFile = fopen(filePath, "r");
+	if (featuresFile == NULL) {
+		*msg = SP_DATABASE_CREATION_FEATURE_FILE_MISSING;
+		return NULL;
+	}
+	int numberOfFeatures = loadNumberOfFeatures(featuresFile, msg);
+	if (*msg != SP_DATABASE_CREATION_SUCCESS) {
+		fclose(featuresFile);
+		return NULL;
+	}
+
+	SPPoint *features = (SPPoint *) malloc(numberOfFeatures * sizeof(SPPoint));
+	if (features == NULL) {
+		fclose(featuresFile);
+		*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
+		return NULL;
+	}
+	for (int i = 0; i < numberOfFeatures; i++) {
+		SPPoint feature = loadFeature(featuresFile, expectedFeatureDimension, index, msg);
+		if (*msg != SP_DATABASE_CREATION_SUCCESS) {
+			destroyVariables(features, i, NULL, NULL);
+			fclose(featuresFile);
+			return NULL;
+		}
+		features[i] = feature;
+	}
+
+	fclose(featuresFile);
+	*msg = SP_DATABASE_CREATION_SUCCESS;
+	*numOfFeaturesLoaded = numberOfFeatures;
+	return features;
+
+}
+
+SPPoint *loadAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_CREATION_MSG *msg) {
+	char *featuresPath = NULL;
+	SPPoint *allFeatures = NULL;
+
+	SP_CONFIG_MSG resultMSG;
+	int numOfImages = spConfigGetNumOfImages(config, &resultMSG);
+	if (resultMSG != SP_CONFIG_SUCCESS) {
+		*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
+		return NULL;
+	}
+
+	int expectedDimension = spConfigGetPCADim(config, &resultMSG);
+	if (resultMSG != SP_CONFIG_SUCCESS) {
+		*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
+		return NULL;
+	}
+
+	allFeatures = (SPPoint *) malloc(1 * sizeof(SPPoint));
+	featuresPath = (char *) malloc (MAX_PATH_LENGTH * sizeof(char));
+	if (allFeatures == NULL || featuresPath == NULL) {
+		destroyVariables(allFeatures, 0, NULL, featuresPath);
+		*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
+		return NULL;
+	}
+
+	int numOfFeaturesLoaded;
+	int totalFeaturesCount = 0;
+
+	for (int imageIndex = 0; imageIndex < numOfImages; imageIndex++) {
+		if (spConfigGetImageFeaturesPath(featuresPath, config, imageIndex) != SP_CONFIG_SUCCESS) {
+			destroyVariables(allFeatures, totalFeaturesCount, NULL, featuresPath);
+			*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
+			return NULL;
+		}
+		SPPoint *features = loadFeatures(featuresPath, imageIndex, expectedDimension, &numOfFeaturesLoaded, msg);
+		if (*msg != SP_DATABASE_CREATION_SUCCESS) {
+			destroyVariables(allFeatures, totalFeaturesCount, NULL, featuresPath);
+			return NULL;
+		}
+
+		totalFeaturesCount += numOfFeaturesLoaded;
+
+		allFeatures = (SPPoint *) realloc(allFeatures, totalFeaturesCount * sizeof(SPPoint));
+		if (allFeatures == NULL) {
+			destroyVariables(allFeatures, totalFeaturesCount, NULL, featuresPath);
+			freePointsArray(features, numOfFeaturesLoaded);
+			*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
+			return NULL;
+		}
+
+		for (int i = 0; i < numOfFeaturesLoaded; i++) {
+			allFeatures[totalFeaturesCount - numOfFeaturesLoaded + i] = features[i];
+		}
+	}
+
+	free(featuresPath);
+	*numberOfFeatures = totalFeaturesCount;
+	*msg = SP_DATABASE_CREATION_SUCCESS;
+	return allFeatures;
+}
 
 SP_DATABASE_CREATION_MSG writeFeature(FILE* featureFile, SPPoint feature) {
 	if (featureFile == NULL) {
@@ -85,9 +222,9 @@ SP_DATABASE_CREATION_MSG writeFeature(FILE* featureFile, SPPoint feature) {
 	}
 	for (int i = 0; i < dim; i++) {
 		double coordinate = spPointGetAxisCoor(feature, i);
-		char *pointCoordinate = (char *) malloc(20 * sizeof(char));
+		char *pointCoordinate = (char *) malloc(MAX_FEATURE_COORDINATE_STRING_LEN * sizeof(char));
 		int numOfChars = sprintf(pointCoordinate, "%f", coordinate);
-		if (pointCoordinate == NULL || numOfChars == 0 || numOfChars > 19) {
+		if (pointCoordinate == NULL || numOfChars == 0 || numOfChars > MAX_FEATURE_COORDINATE_STRING_LEN - 1) {
 			for (int j = 0; j < i; j++) {
 				free(pointCoordinates[i]);
 			}
@@ -97,7 +234,7 @@ SP_DATABASE_CREATION_MSG writeFeature(FILE* featureFile, SPPoint feature) {
 		pointCoordinates[i] = pointCoordinate;
 	}
 	SP_DATABASE_CREATION_MSG returnMsg = SP_DATABASE_CREATION_SUCCESS;
-	char *joinedCoordinates = spUtilStrJoin(pointCoordinates, dim, ' ');
+	char *joinedCoordinates = spUtilStrJoin(pointCoordinates, dim, FEATURE_COORDINATES_DELIM);
 	if (joinedCoordinates == NULL) {
 		returnMsg = SP_DATABASE_CREATION_ALLOC_FAIL;
 	} else {
@@ -114,15 +251,19 @@ SP_DATABASE_CREATION_MSG writeFeature(FILE* featureFile, SPPoint feature) {
 }
 
 SP_DATABASE_CREATION_MSG writeFeatures(char *filePath, SPPoint *features, int numOfFeatures) {
-	FILE *featuresFile = fopen(filePath, "w");
 	if (numOfFeatures == 0) {
 		return SP_DATABASE_CREATION_INVALID_ARGUMENT;
 	}
-	char numOfFeaturesAsString[10];
+	char numOfFeaturesAsString[MAX_NUM_OF_FEATURES_STRING_LEN];
 	int numberOfChars = sprintf(numOfFeaturesAsString, "%d", numOfFeatures);
-	if (numberOfChars == 0 || numberOfChars > 9) {
+	if (numberOfChars == 0 || numberOfChars > MAX_NUM_OF_FEATURES_STRING_LEN - 1) {
 		return SP_DATABASE_CREATION_INVALID_ARGUMENT;
 	}
+	FILE *featuresFile = fopen(filePath, "w");
+	if (featuresFile == NULL) {
+		return SP_DATABASE_CREATION_WRITE_ERROR;
+	}
+
 	if (fputs(numOfFeaturesAsString, featuresFile) == EOF || fputc('\n', featuresFile) == EOF) {
 		fclose(featuresFile);
 		remove(filePath);
@@ -143,23 +284,10 @@ SP_DATABASE_CREATION_MSG writeFeatures(char *filePath, SPPoint *features, int nu
 	return SP_DATABASE_CREATION_SUCCESS;
 }
 
-void destroyVariables(SPPoint *allFeatures, int totalFeaturesCount, char *imagePath, char *featuresPath) {
-	for (int j = 0; j < totalFeaturesCount; j++) {
-		spPointDestroy(allFeatures[j]);
-	}
-	free(allFeatures);
-	free(imagePath);
-	free(featuresPath);
-}
-
 SPPoint *extractAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_CREATION_MSG *msg) {
 	char *imagePath = NULL, *featuresPath = NULL;
 	SPPoint *allFeatures = NULL;
 
-	if (config == NULL) {
-		*msg = SP_DATABASE_CREATION_INVALID_ARGUMENT;
-		return NULL;
-	}
 	SP_CONFIG_MSG resultMSG;
 	int numOfImages = spConfigGetNumOfImages(config, &resultMSG);
 	if (resultMSG != SP_CONFIG_SUCCESS) {
@@ -167,15 +295,6 @@ SPPoint *extractAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_
 		return NULL;
 	}
 
-//	bool extractionMode = spConfigIsExtractionMode(config, &resultMSG);
-//	if (resultMSG != SP_CONFIG_SUCCESS) {
-//		*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
-//		return NULL;
-//	}
-	//if (extractionMode) {
-		//return loadImagesDatabase(config, numOfImages, msg);
-//		return NULL;
-	//}
 	ImageProc ip = ImageProc(config);
 
 	allFeatures = (SPPoint *) malloc(1 * sizeof(SPPoint));
@@ -192,7 +311,7 @@ SPPoint *extractAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_
 		if (spConfigGetImagePath(imagePath, config, imageIndex) != SP_CONFIG_SUCCESS ||
 				spConfigGetImageFeaturesPath(featuresPath, config, imageIndex) != SP_CONFIG_SUCCESS) {
 			destroyVariables(allFeatures, totalFeaturesCount, imagePath, featuresPath);
-			*msg = SP_DATABASE_CREATION_ALLOC_FAIL;
+			*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
 			return NULL;
 		}
 		SPPoint *features = ip.getImageFeatures(imagePath, imageIndex, &numOfFeaturesExtracted);
@@ -232,11 +351,26 @@ SPPoint *extractAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_
 	return allFeatures;
 }
 
+SPPoint *getAllFeatures(SPConfig config, int *numberOfFeatures, SP_DATABASE_CREATION_MSG *msg) {
+
+	if (config == NULL) {
+		*msg = SP_DATABASE_CREATION_INVALID_ARGUMENT;
+		return NULL;
+	}
+	SP_CONFIG_MSG resultMSG;
+	bool extractionMode = spConfigIsExtractionMode(config, &resultMSG);
+	if (resultMSG != SP_CONFIG_SUCCESS) {
+		*msg = SP_DATABASE_CREATION_CONFIG_ERROR;
+		return NULL;
+	}
+	return extractionMode ? extractAllFeatures(config, numberOfFeatures, msg) : loadAllFeatures(config, numberOfFeatures, msg);
+}
+
 SPKDTreeNode createImagesSearchTree(const SPConfig config, SP_DATABASE_CREATION_MSG *msg) {
 	SPPoint *allFeatures = NULL;
 
 	int totalFeaturesCount;
-	allFeatures = extractAllFeatures(config, &totalFeaturesCount, msg);
+	allFeatures = getAllFeatures(config, &totalFeaturesCount, msg);
 	if (allFeatures == NULL || totalFeaturesCount <= 0 || *msg != SP_DATABASE_CREATION_SUCCESS) {
 		free(allFeatures);
 		return NULL;

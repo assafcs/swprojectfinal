@@ -111,4 +111,15 @@ char *spUtilStrJoin(char **strs, int stringsCount, const char delim) {
 	return result;
 }
 
+void freeStringsArray(char **strings, int count) {
+	if (strings == NULL) {
+		return;
+	}
+	int i;
+	for (i = 0; i < count; i++) {
+		free(strings[i]);
+	}
+	free(strings);
+}
+
 
