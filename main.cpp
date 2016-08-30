@@ -55,6 +55,8 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	sp::ImageProc ip = sp::ImageProc(config);
+
 	SP_DATABASE_CREATION_MSG msg;
 
 	SPKDTreeNode searchTree = createImagesSearchTree(config, &msg);
@@ -67,11 +69,12 @@ int main(int argc, char *argv[]) {
 		if (strcmp(imageQueryPath, "<>") == 0) {
 			break;
 		} else {
-			int *similarImages = findSimilarImagesIndices(config, imageQueryPath, searchTree, &resultsCount);
+			int *similarImages = findSimilarImagesIndices(config, imageQueryPath, searchTree, &resultsCount, ip);
 			printf("Results: %d \n ", resultsCount);
 			for (int i = 0; i < resultsCount; i++) {
 				printf("%d ", similarImages[i]);
 			}
+			ip.showImage(imageQueryPath);
 		}
 
 	printf(EXIT_MESSAGE);

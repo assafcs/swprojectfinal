@@ -400,7 +400,7 @@ SPKDTreeNode createImagesSearchTree(const SPConfig config, SP_DATABASE_CREATION_
 	return tree;
 }
 
-int *findSimilarImagesIndices(const SPConfig config, const char *queryImagePath, const SPKDTreeNode searchTree, int *resultsCount) {
+int *findSimilarImagesIndices(const SPConfig config, const char *queryImagePath, const SPKDTreeNode searchTree, int *resultsCount, ImageProc *ip) {
 	if (config == NULL || searchTree == NULL || resultsCount == NULL) {
 		return NULL;
 	}
@@ -430,7 +430,6 @@ int *findSimilarImagesIndices(const SPConfig config, const char *queryImagePath,
 	}
 
 	int numOfFeaturesExtracted;
-	ImageProc ip = ImageProc(config);
 
 	SPPoint *features = ip.getImageFeatures(queryImagePath, 0, &numOfFeaturesExtracted);
 
