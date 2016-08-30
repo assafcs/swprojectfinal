@@ -17,6 +17,13 @@
 #define MSG_ROW_PREFIX "- message: "
 #define NEW_LINE "\n"
 
+// [R] messages consts
+#define FILE_ROW_R_MSG "File: "
+#define LINE_ROW_R_MSG "Line: "
+#define MSG_ROW_R_MSG "Message: "
+#define NEW_LINE "\n"
+
+
 SP_LOGGER_MSG generalLoggerPrint(const char* header, const char* msg, const char* file,
 		const char* function, const int line);
 int loggerDetailLines(const char* header, const char* msg, const char* file, const char* function, const int line);
@@ -196,4 +203,10 @@ int loggerPrintLine(const char* prefix, const int line) {
 		res = fprintf(logger->outputChannel, "%s%d%s", prefix, line, NEW_LINE);
 	}
 	return res;
+}
+
+void printRErrorMsg(const char* filename, const int line, const char* msg) {
+	printf("%s%s%s", FILE_ROW_R_MSG, filename, NEW_LINE);
+	printf("%s%d%s", LINE_ROW_R_MSG, line, NEW_LINE);
+	printf("%s%s%s", MSG_ROW_R_MSG, msg, NEW_LINE);
 }

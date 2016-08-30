@@ -214,4 +214,6 @@ SP_LOGGER_MSG spLoggerPrintDebug(const char* msg, const char* file,
  */
 SP_LOGGER_MSG spLoggerPrintMsg(const char* msg);
 
+void printRErrorMsg(const char* filename, const int line, const char* msg);
+
 #endif

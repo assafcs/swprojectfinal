@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include "SPLogger.h"
 
+#define DEFAULT_CONFIG_FILENAME "spcbir.config"
+
 /**
  * A data-structure which is used for configuring the system.
  */
@@ -194,6 +196,10 @@ SP_CONFIG_MSG spConfigGetImagePath(char* imagePath, const SPConfig config,
  *  - SP_CONFIG_SUCCESS - in case of success
  */
 SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config);
+
+char *spConfigGetLoggerFilename(const SPConfig config);
+
+SP_LOGGER_LEVEL spConfigGetLoggerLevel(const SPConfig config);
 
 SP_CONFIG_MSG spConfigGetImageFeaturesPath(char *featuresPath, const SPConfig config, int index);
 

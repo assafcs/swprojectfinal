@@ -6,11 +6,24 @@
  */
 
 #include "SPConfig.h"
+#include "SPLogger.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
+
+#define CONFIG_FILE_COULD_NOT_BE_OPENED_PREFIX "The configuration file "
+#define CONFIG_FILE_COULD_NOT_BE_OPENED_SUFFIX " couldn’t be open\n"
+#define DEFAULT_CONFIG_FILE_COULD_NOT_BE_OPENED "The default configuration file spcbir.config couldn’t be open\n"
+
+#define MESSAGE_INVALID_VALUE_CONSTRAINT_NOT_MET "Invalid value - constraint not met"
+#define MESSAGE_INVALID_CONF_LINE "Invalid configuration line"
+#define MESSAGE_PARAM_IS_NOT_SET_PREFIX "Parameter "
+#define MESSAGE_PARAM_IS_NOT_SET_SUFFIX " is not set"
+#define MAXIMUM_R_ERROR_MSG_LENGTH 40
+
+
 
 /*** Types Declarations ***/
 
@@ -38,7 +51,7 @@ struct sp_config_t {
 	SP_TREE_SPLIT_METHOD splitMethod;
 	int KNN;
 	bool minimalGUI;
-	int loggerLevel;
+	SP_LOGGER_LEVEL loggerLevel;
 	char *loggerFilename;
 };
 
@@ -67,6 +80,7 @@ static const char NUM_IMAGES_BIT_MASK = 0x08;
 
 SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 	FILE *configFileStream;
+	int lineNum = -1;
 	KeyToValue *currentParameter;
 	SP_PARAMETER_READ_MSG parameterReadMsg;
 	SP_PARAMETER_PARSE_MSG parameterParseMsg;
@@ -74,13 +88,14 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 	char requiredFieldsBitMask = 0x00;
 	SPConfig config, returnValue;
 
-	if (filename == NULL) {
-		*msg = SP_CONFIG_INVALID_ARGUMENT;
-		return NULL;
-	}
 	configFileStream = fopen(filename, "r");
 	if (configFileStream == NULL) {
 		*msg = SP_CONFIG_CANNOT_OPEN_FILE;
+		if (strcmp(filename, DEFAULT_CONFIG_FILENAME) == 0) {
+			printf(DEFAULT_CONFIG_FILE_COULD_NOT_BE_OPENED);
+		} else {
+			printf("%s%s", CONFIG_FILE_COULD_NOT_BE_OPENED_PREFIX, CONFIG_FILE_COULD_NOT_BE_OPENED_SUFFIX);
+		}
 		return NULL;
 	}
 	config = initConfig();
@@ -101,6 +116,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 	*msg = SP_CONFIG_SUCCESS;
 
 	while (!isDone) {
+		lineNum++;
 		currentParameter = nextParameter(configFileStream, &parameterReadMsg, &isDone);
 		switch (parameterReadMsg) {
 		case SP_PARAMETER_READ_ALLOCATION_FAILED:
@@ -154,7 +170,27 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 	}
 
 	if (returnValue == NULL) {
+		if (*msg == SP_CONFIG_INVALID_INTEGER) {
+			printRErrorMsg(filename, lineNum, MESSAGE_INVALID_VALUE_CONSTRAINT_NOT_MET);
+		} else if (*msg == SP_CONFIG_INVALID_STRING) {
+			printRErrorMsg(filename, lineNum, MESSAGE_INVALID_CONF_LINE);
+		}
 		spConfigDestroy(config);
+	} else {
+		char errorMessage[MAXIMUM_R_ERROR_MSG_LENGTH];
+		if (config->numOfImages == NULL) {
+			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "spNumOfImages", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+			printErrorMsg(filename, ++lineNum, errorMessage);
+		} else if (config->imagesSuffix == NULL) {
+			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesSuffix", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+			printErrorMsg(filename, ++lineNum, errorMessage);
+		} else if (config->imagesPrefix == NULL) {
+			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesPrefix", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+			printErrorMsg(filename, ++lineNum, errorMessage);
+		} else if (config->imagesDirectory == NULL) {
+			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesDirectory", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+			printErrorMsg(filename, ++lineNum, errorMessage);
+		}
 	}
 
 	fclose(configFileStream);
@@ -191,7 +227,7 @@ int setupConfigWithDefaultValues(SPConfig config) {
 	config->numOfSimilarImages = 1;
 	config->KNN = 1;
 	config->splitMethod = TREE_SPLIT_METHOD_MAX_SPREAD;
-	config->loggerLevel = 3;
+	config->loggerLevel = SP_LOGGER_INFO_WARNING_ERROR_LEVEL;
 	config->loggerFilename = loggerFilename;
 	return 0;
 }
@@ -586,6 +622,15 @@ SP_CONFIG_MSG spConfigGetPCAPath(char* pcaPath, const SPConfig config) {
 	sprintf(pcaPath, "%s%s", config->imagesDirectory, config->PCAFilename);
 	return SP_CONFIG_SUCCESS;
 }
+
+char *spConfigGetLoggerFilename(const SPConfig config){
+	return config->loggerFilename;
+}
+
+SP_LOGGER_LEVEL spConfigGetLoggerLevel(const SPConfig config){
+	return config->loggerLevel;
+}
+
 
 SP_CONFIG_MSG spConfigGetImageFeaturesPath(char *featuresPath, const SPConfig config, int index) {
 	if (featuresPath == NULL || config == NULL) {
