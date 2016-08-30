@@ -19,6 +19,8 @@ extern "C" {
 #include "SPConfig.h"
 }
 
+#define INVALID_COMMAND_LINE_TEXT "Invalid command line : use -c <config_filename>\n"
+
 #define LINE_MAX_SIZE 1024
 #define QUERY_IMAGE_INPUT "Please enter an image path:\n"
 #define EXIT_MESSAGE "Exiting…\n"
