@@ -127,6 +127,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 		case SP_PARAMETER_READ_INVALID_FORMAT:
 			returnValue = NULL;
 			*msg = SP_CONFIG_INVALID_STRING;
+			printRErrorMsg(filename, lineNum, MESSAGE_INVALID_CONF_LINE);
 			isDone = true;
 			break;
 		case SP_PARAMETER_READ_SUCCESS:
@@ -136,6 +137,7 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 			case SP_PARAMETER_PARSE_INVALID_INTEGER_FORMAT:
 				returnValue = NULL;
 				*msg = SP_CONFIG_INVALID_INTEGER;
+				printRErrorMsg(filename, lineNum, MESSAGE_INVALID_VALUE_CONSTRAINT_NOT_MET);
 				isDone = true;
 				break;
 			default:
@@ -154,43 +156,31 @@ SPConfig spConfigCreate(const char* filename, SP_CONFIG_MSG* msg) {
 			free(currentParameter);
 		}
 	}
-
+	char errorMessage[MAXIMUM_R_ERROR_MSG_LENGTH];
 	if ((requiredFieldsBitMask & IMAGES_DIRECTORY_BIT_MASK) == 0x00) {
 		*msg = SP_CONFIG_MISSING_DIR;
+		sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesDirectory", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+		printErrorMsg(filename, ++lineNum, errorMessage);
 		returnValue = NULL;
 	} else if ((requiredFieldsBitMask & IMAGES_PREFIX_BIT_MASK) == 0x00) {
 		*msg = SP_CONFIG_MISSING_PREFIX;
+		sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesPrefix", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+		printErrorMsg(filename, ++lineNum, errorMessage);
 		returnValue = NULL;
 	} else if ((requiredFieldsBitMask & IMAGES_SUFFIX_BIT_MASK) == 0x00) {
 		*msg = SP_CONFIG_MISSING_SUFFIX;
+		sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesSuffix", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+		printErrorMsg(filename, ++lineNum, errorMessage);
 		returnValue = NULL;
 	} else if ((requiredFieldsBitMask & NUM_IMAGES_BIT_MASK) == 0x00) {
 		*msg = SP_CONFIG_MISSING_NUM_IMAGES;
+		sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "spNumOfImages", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
+		printErrorMsg(filename, ++lineNum, errorMessage);
 		returnValue = NULL;
 	}
 
 	if (returnValue == NULL) {
-		if (*msg == SP_CONFIG_INVALID_INTEGER) {
-			printRErrorMsg(filename, lineNum, MESSAGE_INVALID_VALUE_CONSTRAINT_NOT_MET);
-		} else if (*msg == SP_CONFIG_INVALID_STRING) {
-			printRErrorMsg(filename, lineNum, MESSAGE_INVALID_CONF_LINE);
-		}
 		spConfigDestroy(config);
-	} else {
-		char errorMessage[MAXIMUM_R_ERROR_MSG_LENGTH];
-		if (config->numOfImages == NULL) {
-			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "spNumOfImages", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
-			printErrorMsg(filename, ++lineNum, errorMessage);
-		} else if (config->imagesSuffix == NULL) {
-			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesSuffix", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
-			printErrorMsg(filename, ++lineNum, errorMessage);
-		} else if (config->imagesPrefix == NULL) {
-			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesPrefix", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
-			printErrorMsg(filename, ++lineNum, errorMessage);
-		} else if (config->imagesDirectory == NULL) {
-			sprintf(errorMessage, "%s%s%s", MESSAGE_PARAM_IS_NOT_SET_PREFIX, "imagesDirectory", MESSAGE_PARAM_IS_NOT_SET_SUFFIX);
-			printErrorMsg(filename, ++lineNum, errorMessage);
-		}
 	}
 
 	fclose(configFileStream);

@@ -214,6 +214,14 @@ SP_LOGGER_MSG spLoggerPrintDebug(const char* msg, const char* file,
  */
 SP_LOGGER_MSG spLoggerPrintMsg(const char* msg);
 
+/**
+ * Helper void method for printing [R] error messages
+ *
+ * @param filename - The filename for filename print row
+ * @param line - The line number for line print row
+ * @param msg - The message to be printed
+ *
+ */
 void printRErrorMsg(const char* filename, const int line, const char* msg);
 
 #endif
